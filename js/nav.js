@@ -3,7 +3,7 @@
 // ==========================================================
 
 // หน้าที่ต้องล็อกอินก่อนถึงจะเข้าได้
-const AUTH_REQUIRED_TABS = ['profile', 'chat', 'noti', 'post', 'faceid'];
+const AUTH_REQUIRED_TABS = ['profile', 'chat', 'noti', 'post'];
 
 function switchTab(tabId) {
   if (AUTH_REQUIRED_TABS.includes(tabId) && !isLoggedIn()) {
@@ -37,7 +37,7 @@ function switchTab(tabId) {
       loadNotifications();
       break;
     case 'chat':
-      loadConversations();
+      loadChatContacts();
       break;
   }
 }
