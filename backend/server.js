@@ -6,6 +6,9 @@ const multer = require("multer");
 
 const app = express();
 
+console.log("🔥 SERVER FILE:", __filename);
+console.log("🔥 FACE ROUTE LOADED");
+
 app.use(cors());
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname,"../uploads")));
@@ -482,6 +485,72 @@ app.post("/notifications", (req, res) => {
     );
 
 });
+
+// ===========================
+// GET CHAT CONTACTS
+// ===========================
+
+app.get("/chat-contacts/:userId", (req, res) => {
+
+    const userId = Number(req.params.userId);
+
+    db.query(
+        `
+        SELECT
+            u.id,
+            u.first_name,
+            u.last_name,
+            MAX(m.created_at) AS last_message_at
+
+        FROM messages m
+
+        INNER JOIN users u
+        ON u.id =
+            CASE
+                WHEN m.sender_id = ?
+                THEN m.receiver_id
+                ELSE m.sender_id
+            END
+
+        WHERE
+            m.sender_id = ?
+            OR
+            m.receiver_id = ?
+
+        GROUP BY
+            u.id,
+            u.first_name,
+            u.last_name
+
+        ORDER BY
+            last_message_at DESC
+        `,
+        [
+            userId,
+            userId,
+            userId
+        ],
+        (err, rows) => {
+
+            if (err) {
+
+                return res.status(500).json({
+                    success: false,
+                    message: err.sqlMessage
+                });
+
+            }
+
+            res.json({
+                success: true,
+                data: rows
+            });
+
+        }
+    );
+
+});
+
 // ===========================
 // GET MESSAGES
 // ===========================
@@ -571,22 +640,41 @@ app.post("/messages", (req, res) => {
 });
 
 // ===========================
-// VERIFY FACE
+// REGISTER FACE
 // ===========================
 
-app.patch("/users/:id/verify-face", (req, res) => {
+app.post("/face/register", (req, res) => {
 
+    const {
+        user_id,
+        face_embedding
+    } = req.body;
+
+    // ตรวจข้อมูล
+    if (!user_id || !Array.isArray(face_embedding)) {
+
+        return res.status(400).json({
+            success: false,
+            message: "ข้อมูล Face Embedding ไม่ถูกต้อง"
+        });
+
+    }
+
+    // ต้องมี 128 ค่า
+    if (face_embedding.length !== 128) {
+
+        return res.status(400).json({
+            success: false,
+            message: "Face Embedding ต้องมี 128 ค่า"
+        });
+
+    }
+
+    // ตรวจว่า user มีอยู่จริง
     db.query(
-
-        `INSERT INTO face_data
-        (user_id)
-        VALUES(?)`,
-
-        [
-            req.params.id
-        ],
-
-        (err) => {
+        "SELECT id FROM users WHERE id=?",
+        [user_id],
+        (err, users) => {
 
             if (err) {
 
@@ -597,13 +685,223 @@ app.patch("/users/:id/verify-face", (req, res) => {
 
             }
 
+            if (users.length === 0) {
+
+                return res.status(404).json({
+                    success: false,
+                    message: "ไม่พบผู้ใช้งาน"
+                });
+
+            }
+
+            // ลบ Face เดิมของ user ก่อน
+            db.query(
+                "DELETE FROM face_data WHERE user_id=?",
+                [user_id],
+                (deleteErr) => {
+
+                    if (deleteErr) {
+
+                        return res.status(500).json({
+                            success: false,
+                            message: deleteErr.sqlMessage
+                        });
+
+                    }
+
+                    // บันทึก Face ใหม่
+                    db.query(
+                        `INSERT INTO face_data
+                        (user_id, face_embedding)
+                        VALUES (?, ?)`,
+                        [
+                            user_id,
+                            JSON.stringify(face_embedding)
+                        ],
+                        (insertErr, result) => {
+
+                            if (insertErr) {
+
+                                return res.status(500).json({
+                                    success: false,
+                                    message: insertErr.sqlMessage
+                                });
+
+                            }
+
+                            res.json({
+                                success: true,
+                                message: "บันทึก Face ID สำเร็จ",
+                                data: {
+                                    id: result.insertId,
+                                    user_id: user_id
+                                }
+                            });
+
+                        }
+                    );
+
+                }
+            );
+
+        }
+    );
+
+});
+
+// ===========================
+// FACE LOGIN
+// ===========================
+
+app.post("/face/login", (req, res) => {
+
+    const {
+        face_embedding
+    } = req.body;
+
+    if (!Array.isArray(face_embedding)) {
+
+        return res.status(400).json({
+            success: false,
+            message: "ไม่พบ Face Embedding"
+        });
+
+    }
+
+    if (face_embedding.length !== 128) {
+
+        return res.status(400).json({
+            success: false,
+            message: "Face Embedding ต้องมี 128 ค่า"
+        });
+
+    }
+
+    // ดึง Face Embedding ทั้งหมด
+    db.query(
+        `SELECT
+            face_data.user_id,
+            face_data.face_embedding,
+            users.first_name,
+            users.last_name,
+            users.username,
+            users.email
+         FROM face_data
+         INNER JOIN users
+         ON face_data.user_id = users.id`,
+        (err, rows) => {
+
+            if (err) {
+
+                return res.status(500).json({
+                    success: false,
+                    message: err.sqlMessage
+                });
+
+            }
+
+            if (rows.length === 0) {
+
+                return res.json({
+                    success: false,
+                    message: "ยังไม่มีผู้ใช้งานที่ลงทะเบียน Face ID"
+                });
+
+            }
+
+            let bestMatch = null;
+            let bestDistance = Infinity;
+
+            // เปรียบเทียบกับทุก Face ใน Database
+            rows.forEach(row => {
+
+                let storedEmbedding;
+
+                try {
+
+                    storedEmbedding =
+                        typeof row.face_embedding === "string"
+                            ? JSON.parse(row.face_embedding)
+                            : row.face_embedding;
+
+                } catch (error) {
+
+                    return;
+
+                }
+
+                if (!Array.isArray(storedEmbedding)) {
+                    return;
+                }
+
+                if (storedEmbedding.length !== 128) {
+                    return;
+                }
+
+                // Euclidean Distance
+                let distance = 0;
+
+                for (let i = 0; i < 128; i++) {
+
+                    const difference =
+                        face_embedding[i] - storedEmbedding[i];
+
+                    distance += difference * difference;
+
+                }
+
+                distance = Math.sqrt(distance);
+
+                if (distance < bestDistance) {
+
+                    bestDistance = distance;
+                    bestMatch = row;
+
+                }
+
+            });
+
+            // Threshold
+            const FACE_THRESHOLD = 0.6;
+
+            if (!bestMatch || bestDistance > FACE_THRESHOLD) {
+
+                return res.json({
+                    success: false,
+                    message: "ไม่สามารถยืนยันใบหน้าได้",
+                    distance: bestDistance
+                });
+
+            }
+
+            // พบผู้ใช้
             res.json({
+
                 success: true,
-                message: "Face Verify Success"
+
+                message: "เข้าสู่ระบบด้วย Face ID สำเร็จ",
+
+                data: {
+
+                    id: bestMatch.user_id,
+
+                    first_name: bestMatch.first_name,
+
+                    last_name: bestMatch.last_name,
+
+                    username: bestMatch.username,
+
+                    email: bestMatch.email,
+
+                    token: "demo-token",
+
+                    distance: bestDistance
+
+                }
+
             });
 
         }
-
     );
 
 });
