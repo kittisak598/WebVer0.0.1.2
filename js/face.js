@@ -4,6 +4,7 @@
 
 let faceStream = null;
 let faceModelsLoaded = false;
+let faceDetectionLoop = null;
 
 
 // ========================================
@@ -35,6 +36,16 @@ async function loadFaceModels() {
 // ========================================
 
 async function startFaceCamera() {
+
+    // ถ้ามีกล้องเปิดอยู่แล้ว ไม่ต้องเปิดใหม่
+    if (
+        faceStream &&
+        faceStream.getVideoTracks().length > 0 &&
+        faceStream.getVideoTracks()[0].readyState === "live"
+    ) {
+        console.log("🟢 Camera เปิดอยู่แล้ว");
+        return;
+    }
 
     const video = document.getElementById("faceVideo");
 
@@ -82,6 +93,39 @@ async function startFaceCamera() {
 
 function stopFaceCamera() {
 
+    // ========================================
+    // หยุด Face Detection Loop
+    // ========================================
+
+    if (faceDetectionLoop) {
+        cancelAnimationFrame(faceDetectionLoop);
+        faceDetectionLoop = null;
+    }
+
+
+    // ========================================
+    // ล้างกรอบ / Landmark บน Canvas
+    // ========================================
+
+    const canvas = document.getElementById("faceOverlay");
+
+    if (canvas) {
+
+        const ctx = canvas.getContext("2d");
+
+        ctx.clearRect(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+    }
+
+
+    // ========================================
+    // ปิด Camera Stream
+    // ========================================
+
     if (faceStream) {
 
         faceStream.getTracks().forEach(track => {
@@ -91,11 +135,19 @@ function stopFaceCamera() {
         faceStream = null;
     }
 
+
+    // ========================================
+    // ล้าง Video
+    // ========================================
+
     const video = document.getElementById("faceVideo");
 
     if (video) {
+        video.pause();
         video.srcObject = null;
     }
+
+    console.log("🔴 Face Camera + Overlay ปิดแล้ว");
 }
 
 
@@ -164,6 +216,156 @@ async function getFaceEmbedding() {
 }
 
 // ========================================
+// FACE DETECTION OVERLAY
+// ========================================
+
+async function startFaceOverlay() {
+
+    const video = document.getElementById("faceVideo");
+    const canvas = document.getElementById("faceOverlay");
+
+    if (!video || !canvas) {
+        console.error("❌ ไม่พบ faceVideo หรือ faceOverlay");
+        return;
+    }
+
+    console.log("🟢 เริ่ม Face Detection Overlay");
+
+    if (faceDetectionLoop) {
+        cancelAnimationFrame(faceDetectionLoop);
+        faceDetectionLoop = null;
+    }
+
+    const ctx = canvas.getContext("2d");
+
+    canvas.style.zIndex = "10";
+
+    let detecting = false;
+
+    async function detectFace() {
+
+        if (
+            !video ||
+            video.readyState < 2 ||
+            video.videoWidth === 0 ||
+            video.videoHeight === 0
+        ) {
+            faceDetectionLoop =
+                requestAnimationFrame(detectFace);
+            return;
+        }
+
+        // ========================================
+        // ตั้งขนาด Canvas ให้เท่ากับ Video
+        // ========================================
+
+        if (
+            canvas.width !== video.videoWidth ||
+            canvas.height !== video.videoHeight
+        ) {
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            console.log(
+                "Canvas:",
+                canvas.width,
+                "x",
+                canvas.height
+            );
+        }
+
+        // ป้องกัน AI ตรวจซ้อนกันหลายรอบ
+        if (!detecting) {
+
+            detecting = true;
+
+            try {
+
+                const detections = await faceapi
+                    .detectAllFaces(
+                        video,
+                        new faceapi.TinyFaceDetectorOptions({
+                            inputSize: 320,
+                            scoreThreshold: 0.5
+                        })
+                    )
+                    .withFaceLandmarks(true);
+
+                // ล้าง Overlay เดิม
+                ctx.clearRect(
+                    0,
+                    0,
+                    canvas.width,
+                    canvas.height
+                );
+
+                // ========================================
+                // ปรับตำแหน่ง Detection
+                // ========================================
+
+                const displaySize = {
+                    width: video.videoWidth,
+                    height: video.videoHeight
+                };
+
+                const resizedDetections =
+                    faceapi.resizeResults(
+                        detections,
+                        displaySize
+                    );
+
+                // ========================================
+                // วาดกรอบ + Landmark
+                // ========================================
+
+                faceapi.draw.drawDetections(
+                    canvas,
+                    resizedDetections
+                );
+
+                faceapi.draw.drawFaceLandmarks(
+                    canvas,
+                    resizedDetections
+                );
+
+                // ========================================
+                // Debug
+                // ========================================
+
+                if (resizedDetections.length > 0) {
+
+                    console.log(
+                        "🟢 พบใบหน้า:",
+                        resizedDetections.length
+                    );
+
+                    console.log(
+                        "Score:",
+                        resizedDetections[0].detection.score
+                    );
+
+                }
+
+            } catch (error) {
+
+                console.error(
+                    "❌ Face Overlay Error:",
+                    error
+                );
+            }
+
+            detecting = false;
+        }
+
+        faceDetectionLoop =
+            requestAnimationFrame(detectFace);
+    }
+
+    detectFace();
+}
+
+// ========================================
 // เปิดกล้อง + โหลด Model
 // ========================================
 
@@ -180,6 +382,7 @@ async function startFaceScanCamera() {
             "กำลังเปิดกล้อง...";
 
         await startFaceCamera();
+        startFaceOverlay();
 
         document.getElementById("faceStatus").textContent =
             "เปิดกล้องแล้ว กรุณาหันหน้าเข้ากล้อง";
@@ -193,6 +396,310 @@ async function startFaceScanCamera() {
     }
 }
 
+async function getFaceDirection() {
+
+    const video = document.getElementById("faceVideo");
+
+    if (!video) {
+        throw new Error("ไม่พบกล้อง");
+    }
+
+    const detection = await faceapi
+        .detectSingleFace(
+            video,
+            new faceapi.TinyFaceDetectorOptions({
+                inputSize: 320,
+                scoreThreshold: 0.5
+            })
+        )
+        .withFaceLandmarks(true);
+
+    if (!detection) {
+        return null;
+    }
+
+    const landmarks = detection.landmarks.positions;
+
+    // จุดจมูก
+    const nose = landmarks[30];
+
+    // ตาซ้าย
+    const leftEye = landmarks[36];
+
+    // ตาขวา
+    const rightEye = landmarks[45];
+
+    // ระยะจากจมูกถึงตาซ้าย
+    const distLeft =
+        Math.abs(nose.x - leftEye.x);
+
+    // ระยะจากจมูกถึงตาขวา
+    const distRight =
+        Math.abs(nose.x - rightEye.x);
+
+    const ratio =
+        distLeft / distRight;
+
+    console.log(
+        "FACE DIRECTION →",
+        "Left:", distLeft,
+        "Right:", distRight,
+        "Ratio:", ratio
+    );
+
+    /*
+        ratio ใกล้ 1
+        = หน้าตรง
+
+        ratio มากกว่า 1
+        = หันไปทางหนึ่ง
+
+        ratio น้อยกว่า 1
+        = หันอีกทางหนึ่ง
+    */
+
+    if (ratio > 1.35) {
+        return "left";
+    }
+
+    if (ratio < 0.75) {
+        return "right";
+    }
+
+    return "front";
+}
+
+async function testFaceDirection() {
+
+    const direction =
+        await getFaceDirection();
+
+    console.log(
+        "ทิศใบหน้า:",
+        direction
+    );
+
+    const status =
+        document.getElementById("faceStatus");
+
+    if (status) {
+
+        if (!direction) {
+
+            status.textContent =
+                "❌ ไม่พบใบหน้า";
+
+        } else {
+
+            status.textContent =
+                "ตรวจพบ: " + direction;
+
+        }
+    }
+}
+
+
+async function registerFaceAngle(angle) {
+
+    const userId = getCurrentUserId();
+
+    if (!userId) {
+        throw new Error("กรุณาเข้าสู่ระบบก่อนลงทะเบียน Face ID");
+    }
+
+    const status = document.getElementById("faceStatus");
+
+    if (status) {
+        status.textContent = "กำลังตรวจจับใบหน้า...";
+    }
+
+    const embedding = await getFaceEmbedding();
+
+    console.log(
+        "FACE REGISTER → User:",
+        userId,
+        "| Angle:",
+        angle
+    );
+
+    const response = await fetch(
+        "http://localhost:3000/face/register",
+        {
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+                user_id: Number(userId),
+                face_angle: angle,
+                face_embedding: embedding
+            })
+        }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+
+        throw new Error(
+            result.message || "ไม่สามารถลงทะเบียนใบหน้าได้"
+        );
+
+    }
+
+    console.log(
+        "บันทึกสำเร็จ:",
+        angle
+    );
+
+    return result;
+
+}
+
+async function registerAllFaceAngles() {
+
+    const status = document.getElementById("faceStatus");
+
+    try {
+
+        // =========================
+        // ฟังก์ชันรอจนกว่าจะหันถูกมุม
+        // =========================
+
+        async function waitForDirection(
+    requiredDirection,
+    message
+) {
+
+    if (status) {
+        status.textContent = message;
+    }
+
+    while (true) {
+
+        const direction =
+            await getFaceDirection();
+
+        console.log(
+            "กำลังรอ:",
+            requiredDirection,
+            "| ตรวจพบ:",
+            direction
+        );
+
+        if (status && direction) {
+
+            if (direction === requiredDirection) {
+
+                status.textContent =
+                    "✅ ตรวจพบ " +
+                    requiredDirection +
+                    " แล้ว";
+
+            } else {
+
+                status.textContent =
+                    message +
+                    "\n\n" +
+                    "ตอนนี้ตรวจพบ: " +
+                    direction;
+            }
+        }
+
+        if (direction === requiredDirection) {
+            break;
+        }
+
+        await new Promise(
+            resolve => setTimeout(resolve, 300)
+        );
+    }
+}
+
+
+        // =========================
+        // 1. หน้าตรง
+        // =========================
+
+        await waitForDirection(
+            "front",
+            "📸 กรุณามองหน้าตรงเข้ากล้อง..."
+        );
+
+        if (status) {
+            status.textContent =
+                "✅ ตรวจหน้าตรงแล้ว กำลังบันทึก...";
+        }
+
+        await registerFaceAngle("front");
+
+
+        // =========================
+        // 2. หันซ้าย
+        // =========================
+
+        await waitForDirection(
+            "left",
+            "⬅️ กรุณาหันหน้าไปทางซ้าย..."
+        );
+
+        if (status) {
+            status.textContent =
+                "✅ ตรวจหน้าซ้ายแล้ว กำลังบันทึก...";
+        }
+
+        await registerFaceAngle("left");
+
+
+        // =========================
+        // 3. หันขวา
+        // =========================
+
+        await waitForDirection(
+            "right",
+            "➡️ กรุณาหันหน้าไปทางขวา..."
+        );
+
+        if (status) {
+            status.textContent =
+                "✅ ตรวจหน้าขวาแล้ว กำลังบันทึก...";
+        }
+
+        await registerFaceAngle("right");
+
+
+        // =========================
+        // สำเร็จ
+        // =========================
+
+        if (status) {
+            status.textContent =
+                "✅ ลงทะเบียนใบหน้าครบทั้ง 3 มุมแล้ว";
+        }
+
+        alert(
+            "ลงทะเบียน Face ID สำเร็จ\n\n" +
+            "✓ หน้าตรง\n" +
+            "✓ หันซ้าย\n" +
+            "✓ หันขวา"
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Face Registration Error:",
+            error
+        );
+
+        if (status) {
+            status.textContent =
+                "❌ " + error.message;
+        }
+
+    }
+}
 
 // ========================================
 // REGISTER FACE ID
@@ -459,6 +966,8 @@ async function goToFaceLogin() {
         // เปิดกล้อง
         await startFaceCamera();
 
+        startFaceOverlay();
+
         // บังคับให้ video เล่น
         video.muted = true;
         video.autoplay = true;
@@ -500,6 +1009,11 @@ window.registerFace = registerFace;
 window.loginWithFace = loginWithFace;
 window.saveFaceEmbedding = saveFaceEmbedding;
 window.goToFaceLogin = goToFaceLogin;
+
+window.registerAllFaceAngles = registerAllFaceAngles;
+
+window.getFaceDirection = getFaceDirection;
+window.testFaceDirection = testFaceDirection;
 
 console.log("✅ face.js โหลดสำเร็จ");
 console.log("loginWithFace:", typeof window.loginWithFace);

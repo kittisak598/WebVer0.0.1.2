@@ -647,20 +647,56 @@ app.post("/face/register", (req, res) => {
 
     const {
         user_id,
+        face_angle,
         face_embedding
     } = req.body;
 
-    // ตรวจข้อมูล
-    if (!user_id || !Array.isArray(face_embedding)) {
+    // ==============================
+    // ตรวจสอบข้อมูล
+    // ==============================
+
+    if (!user_id) {
 
         return res.status(400).json({
             success: false,
-            message: "ข้อมูล Face Embedding ไม่ถูกต้อง"
+            message: "ไม่พบ User ID"
         });
 
     }
 
-    // ต้องมี 128 ค่า
+    if (!face_angle) {
+
+        return res.status(400).json({
+            success: false,
+            message: "ไม่พบมุมใบหน้า"
+        });
+
+    }
+
+    const allowedAngles = [
+        "front",
+        "left",
+        "right"
+    ];
+
+    if (!allowedAngles.includes(face_angle)) {
+
+        return res.status(400).json({
+            success: false,
+            message: "มุมใบหน้าไม่ถูกต้อง"
+        });
+
+    }
+
+    if (!Array.isArray(face_embedding)) {
+
+        return res.status(400).json({
+            success: false,
+            message: "ไม่พบ Face Embedding"
+        });
+
+    }
+
     if (face_embedding.length !== 128) {
 
         return res.status(400).json({
@@ -670,17 +706,23 @@ app.post("/face/register", (req, res) => {
 
     }
 
-    // ตรวจว่า user มีอยู่จริง
+
+    // ==============================
+    // ตรวจสอบว่า User มีอยู่จริง
+    // ==============================
+
     db.query(
-        "SELECT id FROM users WHERE id=?",
+        "SELECT id FROM users WHERE id = ?",
         [user_id],
         (err, users) => {
 
             if (err) {
 
+                console.error(err);
+
                 return res.status(500).json({
                     success: false,
-                    message: err.sqlMessage
+                    message: "เกิดข้อผิดพลาดในการตรวจสอบ User"
                 });
 
             }
@@ -694,48 +736,74 @@ app.post("/face/register", (req, res) => {
 
             }
 
-            // ลบ Face เดิมของ user ก่อน
+
+            // ==============================
+            // ลบ Face มุมเดิมของ User นี้
+            // ==============================
+
             db.query(
-                "DELETE FROM face_data WHERE user_id=?",
-                [user_id],
+                `DELETE FROM face_data
+                 WHERE user_id = ?
+                 AND face_angle = ?`,
+                [user_id, face_angle],
                 (deleteErr) => {
 
                     if (deleteErr) {
 
+                        console.error(deleteErr);
+
                         return res.status(500).json({
                             success: false,
-                            message: deleteErr.sqlMessage
+                            message: "ไม่สามารถบันทึก Face ID ได้"
                         });
 
                     }
 
+
+                    // ==============================
                     // บันทึก Face ใหม่
+                    // ==============================
+
                     db.query(
                         `INSERT INTO face_data
-                        (user_id, face_embedding)
-                        VALUES (?, ?)`,
+                        (
+                            user_id,
+                            face_embedding,
+                            face_angle
+                        )
+                        VALUES (?, ?, ?)`,
                         [
                             user_id,
-                            JSON.stringify(face_embedding)
+                            JSON.stringify(face_embedding),
+                            face_angle
                         ],
-                        (insertErr, result) => {
+                        (insertErr) => {
 
                             if (insertErr) {
 
+                                console.error(insertErr);
+
                                 return res.status(500).json({
                                     success: false,
-                                    message: insertErr.sqlMessage
+                                    message: "ไม่สามารถบันทึก Face Embedding ได้"
                                 });
 
                             }
 
-                            res.json({
+                            console.log(
+                                "FACE REGISTER → User:",
+                                user_id,
+                                "| Angle:",
+                                face_angle
+                            );
+
+                            return res.json({
+
                                 success: true,
-                                message: "บันทึก Face ID สำเร็จ",
-                                data: {
-                                    id: result.insertId,
-                                    user_id: user_id
-                                }
+
+                                message:
+                                    `ลงทะเบียนใบหน้า ${face_angle} สำเร็จ`
+
                             });
 
                         }
@@ -782,6 +850,7 @@ app.post("/face/login", (req, res) => {
         `SELECT
             face_data.user_id,
             face_data.face_embedding,
+            face_data.face_angle,
             users.first_name,
             users.last_name,
             users.username,
@@ -812,7 +881,9 @@ app.post("/face/login", (req, res) => {
             let bestMatch = null;
             let bestDistance = Infinity;
 
-            // เปรียบเทียบกับทุก Face ใน Database
+            // เก็บคะแนนที่ดีที่สุดของแต่ละ User
+            const userMatches = {};
+
             rows.forEach(row => {
 
                 let storedEmbedding;
@@ -826,8 +897,12 @@ app.post("/face/login", (req, res) => {
 
                 } catch (error) {
 
-                    return;
+                    console.log(
+                        "❌ อ่าน Face Embedding ไม่ได้ User:",
+                        row.user_id
+                    );
 
+                    return;
                 }
 
                 if (!Array.isArray(storedEmbedding)) {
@@ -852,14 +927,69 @@ app.post("/face/login", (req, res) => {
 
                 distance = Math.sqrt(distance);
 
-                if (distance < bestDistance) {
+                console.log(
+                    "FACE CHECK →",
+                    "User:", row.user_id,
+                    "| Angle:", row.face_angle,
+                    "| Distance:", distance
+                );
 
-                    bestDistance = distance;
-                    bestMatch = row;
+                // เก็บ Face ที่ดีที่สุดของ User แต่ละคน
+                if (!userMatches[row.user_id]) {
+
+                    userMatches[row.user_id] = {
+                        user: row,
+                        bestDistance: distance,
+                        bestAngle: row.face_angle
+                    };
+
+                } else if (
+                    distance < userMatches[row.user_id].bestDistance
+                ) {
+
+                    userMatches[row.user_id].bestDistance =
+                        distance;
+
+                    userMatches[row.user_id].bestAngle =
+                        row.face_angle;
+
+                    userMatches[row.user_id].user =
+                        row;
 
                 }
 
             });
+
+            // หา User ที่มี Face ตรงที่สุด
+            Object.values(userMatches).forEach(match => {
+
+                console.log(
+                    "USER RESULT →",
+                    "User:", match.user.user_id,
+                    "| Best Angle:", match.bestAngle,
+                    "| Best Distance:", match.bestDistance
+                );
+
+                if (match.bestDistance < bestDistance) {
+
+                    bestDistance = match.bestDistance;
+
+                    bestMatch = match.user;
+
+                    bestMatch.matchAngle =
+                        match.bestAngle;
+
+                }
+
+            });
+
+            console.log("==============================");
+            console.log("FACE LOGIN RESULT");
+            console.log("Best User ID:", bestMatch?.user_id);
+            console.log("Best Angle:", bestMatch?.matchAngle);
+            console.log("Best Distance:", bestDistance);
+            console.log("==============================");
+
 
             // Threshold
             const FACE_THRESHOLD = 0.6;

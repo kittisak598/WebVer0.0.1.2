@@ -1,7 +1,7 @@
 // ==========================================================
 // ตัวช่วยเรียก API ทั้งหมด - ทุกไฟล์ js อื่นเรียกผ่านตัวนี้ที่เดียว
 // ==========================================================
-const API_BASE = 'http://192.168.1.12:3000';
+const API_BASE = 'http://localhost:3000';
 
 async function apiRequest(path, options = {}) {
   const res = await fetch(API_BASE + path, options);

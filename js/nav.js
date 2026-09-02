@@ -6,6 +6,14 @@
 const AUTH_REQUIRED_TABS = ['profile', 'chat', 'noti', 'post'];
 
 function switchTab(tabId) {
+
+  if (
+    tabId !== "faceid" &&
+    typeof stopFaceCamera === "function"
+  ) {
+    stopFaceCamera();
+  }
+  
   if (AUTH_REQUIRED_TABS.includes(tabId) && !isLoggedIn()) {
     alert('กรุณาเข้าสู่ระบบ หรือสมัครสมาชิกก่อนใช้งานส่วนนี้');
     tabId = 'auth';
