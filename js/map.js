@@ -61,15 +61,60 @@ async function loadMapMarkers() {
     `${escapeHtml(post.first_name)} ${escapeHtml(post.last_name)}`;
 
   const popupHtml = `
-    <div style="min-width:190px;">
-      <b>${escapeHtml(post.pet_name)}</b><br>
-      จ.${escapeHtml(post.province)}<br>
-      ${escapeHtml(post.description || "")}<br>
-      <button onclick="startConversation(${post.id},${post.user_id},'${ownerName.replace(/'/g,"\\'")}')">
+  <div style="width:240px;">
+
+    ${
+      post.image
+        ? `
+          <img
+            src="http://localhost:3000${post.image}"
+            style="
+              width:100%;
+              height:160px;
+              object-fit:cover;
+              border-radius:10px;
+              margin-bottom:8px;
+            "
+          >
+        `
+        : `
+          <div style="
+            width:100%;
+            height:160px;
+            background:#f1f1f1;
+            border-radius:10px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            margin-bottom:8px;
+          ">
+            ไม่มีรูป
+          </div>
+        `
+    }
+
+    <b>${escapeHtml(post.pet_name)}</b><br>
+
+    <span>
+      จังหวัด : ${escapeHtml(post.province)}
+    </span><br>
+
+    <span>
+      รายละเอียด : ${escapeHtml(post.description || "-")}
+    </span><br><br>
+
+    <button
+      onclick="startConversation(
+        ${post.id},
+        ${post.user_id},
+        '${ownerName.replace(/'/g,"\\'")}'
+      )"
+    >
       แชท
-      </button>
-    </div>
-  `;
+    </button>
+
+  </div>
+`;
 
   const marker = L.marker([
       Number(post.latitude),

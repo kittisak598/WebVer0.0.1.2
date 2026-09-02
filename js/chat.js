@@ -32,11 +32,6 @@ async function loadChatContacts() {
             list.innerHTML =
                 '<p class="text-muted-sm">ยังไม่มีบทสนทนา</p>';
 
-            document.getElementById("chatWithLabel").textContent = "";
-            document.getElementById("chatMessages").innerHTML = "";
-
-            currentUser = null;
-
             return;
         }
 

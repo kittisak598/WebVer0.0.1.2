@@ -83,16 +83,22 @@ async function handlePostSubmit(e) {
 
     const file = document.getElementById("postImage").files[0];
 
+    console.log("ไฟล์ที่เลือก:", file);
+
     if (file) {
 
         const formData = new FormData();
 
         formData.append("image", file);
 
-        const uploadResult = await api.postForm("/upload", formData);
+        const uploadResult =
+            await api.postForm("/upload", formData);
+
+        console.log("ผลจาก /upload:", uploadResult);
 
         image = uploadResult.data.image;
 
+        console.log("image ที่จะส่งเข้า /posts:", image);
     }
 
     console.log({
@@ -102,23 +108,28 @@ async function handlePostSubmit(e) {
 
     await api.post("/posts", {
 
-        user_id: getCurrentUserId(),
+    user_id: getCurrentUserId(),
 
-        pet_name: document.getElementById("postPetName").value,
+    pet_name:
+        document.getElementById("postPetName").value,
 
-        pet_type: "",
+    pet_type: "",
 
-        breed: "",
+    breed: "",
 
-        province: document.getElementById("postProvince").value,
+    province:
+        document.getElementById("postProvince").value,
 
-        description: document.getElementById("postDescription").value,
+    description:
+        document.getElementById("postDescription").value,
 
-        image: image,
+    image: image,
 
-        latitude: document.getElementById("postLat").value,
+    latitude:
+        document.getElementById("postLat").value,
 
-        longitude: document.getElementById("postLng").value
+    longitude:
+        document.getElementById("postLng").value
 
     });
 
