@@ -323,7 +323,10 @@ app.get("/posts", (req, res) => {
 // ===========================
 // CREATE POST
 // ===========================
-app.post("/posts", upload.single("image"), (req, res) => {
+app.post("/posts", (req, res) => {
+
+    console.log("ข้อมูลที่ /posts ได้รับ:");
+    console.log(req.body);
 
     const {
         user_id,
@@ -332,15 +335,10 @@ app.post("/posts", upload.single("image"), (req, res) => {
         breed,
         province,
         description,
+        image,
         latitude,
         longitude
     } = req.body;
-
-    const image = req.file
-        ? "/uploads/" + req.file.filename
-        : "";
-
-    console.log(req.body);
 
     db.query(
         `INSERT INTO posts
@@ -363,27 +361,28 @@ app.post("/posts", upload.single("image"), (req, res) => {
             breed,
             province,
             description,
-            image,
+            image || "",
             latitude,
             longitude
         ],
-        (err,result)=>{
+        (err, result) => {
 
-            if(err){
+            if (err) {
+                console.log(err);
+
                 return res.status(500).json({
-                    success:false,
-                    message:err.sqlMessage
+                    success: false,
+                    message: err.sqlMessage
                 });
             }
 
             res.json({
-                success:true,
-                id:result.insertId
+                success: true,
+                id: result.insertId
             });
 
         }
     );
-
 });
 
 // ===========================
