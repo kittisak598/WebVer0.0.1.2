@@ -9,6 +9,7 @@ async function loadProfile() {
 
   try {
     const { data: user } = await api.get(`/users/${userId}`);
+
     document.getElementById('first_name').value = user.first_name || '';
     document.getElementById('last_name').value = user.last_name || '';
     document.getElementById('email').value = user.email || '';
@@ -17,16 +18,6 @@ async function loadProfile() {
     document.getElementById('region_zone').value = user.region_zone || 'north';
     document.getElementById('address_detail').value = user.address_detail || '';
 
-    const statusEl = document.getElementById('profileStatus');
-    if (user.face_id_verified) {
-      statusEl.textContent = '✓ Face ID Verified';
-      statusEl.style.background = 'rgba(74, 222, 128, 0.15)';
-      statusEl.style.color = '#16A34A';
-    } else {
-      statusEl.textContent = 'ยังไม่ได้ยืนยัน Face ID';
-      statusEl.style.background = 'rgba(239, 68, 68, 0.12)';
-      statusEl.style.color = '#DC2626';
-    }
   } catch (err) {
     console.error('โหลดโปรไฟล์ไม่สำเร็จ:', err.message);
   }
@@ -60,3 +51,37 @@ async function saveUserProfile(e) {
     submitBtn.disabled = false;
   }
 }
+
+function toggleProfileField(fieldId, button) {
+    const input = document.getElementById(fieldId);
+
+    if (!input) return;
+
+    const isHidden = input.dataset.private === "true";
+
+    if (isHidden) {
+        // แสดงข้อมูล
+        if (fieldId === "email") {
+            input.type = "email";
+        } else if (fieldId === "phone") {
+            input.type = "tel";
+        } else {
+            input.type = "text";
+        }
+
+        input.dataset.private = "false";
+
+        button.innerHTML = '<i class="fa-solid fa-eye"></i>';
+        button.title = "ซ่อนข้อมูล";
+
+    } else {
+        // ซ่อนข้อมูล
+        input.type = "password";
+        input.dataset.private = "true";
+
+        button.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
+        button.title = "แสดงข้อมูล";
+    }
+}
+
+window.toggleProfileField = toggleProfileField;

@@ -1,400 +1,1103 @@
 <!DOCTYPE html>
+
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    <title>เพื่อนสี่ขา - Love Animal</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>เพื่อนสี่ขา - Love Animal</title>
 
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+
 </head>
 <body>
 
-    <!-- Header Navbar -->
-    <header>
-        <div class="logo" onclick="switchTab('home')">
-            <i class="fa-solid fa-paw"></i> เพื่อนสี่ขา
-        </div>
-        <div class="nav-links">
-            <a id="nav-home" class="active" onclick="switchTab('home')">หน้าหลัก (แผนที่)</a>
-            <a id="nav-postlist" onclick="switchTab('postlist')">รายการโพสต์</a>
-            <a id="nav-post" onclick="switchTab('post')">โพสต์ตามหา</a>
-            <a id="nav-chat" onclick="switchTab('chat')">ข้อความ</a>
-            <a id="nav-noti" onclick="switchTab('noti')">แจ้งเตือน</a>
-            <a id="nav-profile" onclick="switchTab('profile')">โปรไฟล์</a>
-            <a id="nav-auth" onclick="switchTab('auth')"><i class="fa-solid fa-user"></i> เข้าสู่ระบบ / สมัครสมาชิก</a>
-        </div>
-    </header>
+<!-- Header Navbar -->
 
-    <!-- Floating Action Button + Popup Menu (แทนแถบสีส้มด้านข้างเดิม) -->
-    <button class="fab-button" id="fabButton" onclick="toggleFabMenu()" aria-label="เมนูด่วน">
-        <i class="fa-solid fa-plus" id="fabIcon"></i>
-    </button>
-    <div class="fab-menu" id="fabMenu">
-        <button onclick="switchTab('noti'); closeFabMenu();">
-            <i class="fa-solid fa-bell"></i> การแจ้งเตือน
-        </button>
-        <button onclick="switchTab('post'); closeFabMenu();">
-            <i class="fa-solid fa-paw"></i> สร้างโพสต์
-        </button>
-        <button onclick="switchTab('chat'); closeFabMenu();">
-            <i class="fa-solid fa-comments"></i> แชท
-        </button>
+<header>
+    <div class="logo" onclick="switchTab('home')">
+        <i class="fa-solid fa-paw"></i> เพื่อนสี่ขา
     </div>
 
-    <!-- ==================== 1. หน้าหลัก (แผนที่ & เลือกจังหวัด) ==================== -->
-    <div id="view-home" class="view-section active">
-        <div class="home-container">
-            <div class="filter-sidebar">
-                <h3><i class="fa-solid fa-filter"></i> เลือกจังหวัดในประเทศไทย</h3>
-                <p class="text-muted-sm">เลือกจังหวัดเพื่อซูมแผนที่ไปยังพื้นที่นั้น</p>
+<div class="nav-links">
+    <a id="nav-home" class="active" onclick="switchTab('home')">
+        หน้าหลัก (แผนที่)
+    </a>
 
-                <div class="form-group">
-                    <select class="form-control" id="provinceFilter" onchange="filterProvince()"></select>
-                </div>
+    <a id="nav-postlist" onclick="switchTab('postlist')">
+        รายการโพสต์
+    </a>
 
-                <hr style="border-color: var(--border-light);">
-                <div style="flex: 1; overflow-y: auto;">
-                    <span class="text-muted-sm">หมุดสีส้มบนแผนที่ = โพสต์ตามหาสัตว์เลี้ยง กดที่หมุดเพื่อดูรายละเอียดและแชทกับเจ้าของโพสต์ได้เลย</span>
+    <a id="nav-post" onclick="switchTab('post')">
+        โพสต์ตามหา
+    </a>
+
+    <a id="nav-chat" onclick="switchTab('chat')">
+        ข้อความ
+    </a>
+
+    <a id="nav-noti" onclick="switchTab('noti')">
+        แจ้งเตือน
+    </a>
+
+    <a id="nav-profile" onclick="switchTab('profile')">
+        โปรไฟล์
+    </a>
+
+    <a id="nav-auth" onclick="switchTab('auth')">
+        <i class="fa-solid fa-user"></i>
+        เข้าสู่ระบบ / สมัครสมาชิก
+    </a>
+</div>
+
+</header>
+
+<!-- Floating Action Button + Popup Menu -->
+
+<button
+class="fab-button"
+id="fabButton"
+onclick="toggleFabMenu()"
+aria-label="เมนูด่วน"
+
+>
+
+<i class="fa-solid fa-plus" id="fabIcon"></i>
+
+</button>
+
+<div class="fab-menu" id="fabMenu">
+
+<!-- ใหม่: สแกนหาสัตว์เลี้ยง -->
+<button onclick="switchTab('petscan'); closeFabMenu();">
+    <i class="fa-solid fa-camera"></i>
+    สแกนหาสัตว์เลี้ยง
+</button>
+
+<button onclick="switchTab('noti'); closeFabMenu();">
+    <i class="fa-solid fa-bell"></i>
+    การแจ้งเตือน
+</button>
+
+<button onclick="switchTab('post'); closeFabMenu();">
+    <i class="fa-solid fa-paw"></i>
+    สร้างโพสต์
+</button>
+
+<button onclick="switchTab('chat'); closeFabMenu();">
+    <i class="fa-solid fa-comments"></i>
+    แชท
+</button>
+
+</div>
+
+<!-- ==================== 1. หน้าหลัก ==================== -->
+
+<div id="view-home" class="view-section active">
+
+<div class="home-container">
+
+    <div class="filter-sidebar">
+
+        <h3>
+            <i class="fa-solid fa-filter"></i>
+            เลือกจังหวัดในประเทศไทย
+        </h3>
+
+        <p class="text-muted-sm">
+            เลือกจังหวัดเพื่อซูมแผนที่ไปยังพื้นที่นั้น
+        </p>
+
+        <div class="form-group">
+            <select
+                class="form-control"
+                id="provinceFilter"
+                onchange="filterProvince()"
+            ></select>
+        </div>
+
+        <hr style="border-color: var(--border-light);">
+
+        <div style="flex: 1; overflow-y: auto;">
+            <span class="text-muted-sm">
+                หมุดสีส้มบนแผนที่ = โพสต์ตามหาสัตว์เลี้ยง
+                กดที่หมุดเพื่อดูรายละเอียดและแชทกับเจ้าของโพสต์ได้เลย
+            </span>
+        </div>
+
+    </div>
+
+    <div id="map"></div>
+
+</div>
+
+</div>
+
+<!-- ==================== 2. หน้ารายการโพสต์ทั้งหมด ==================== -->
+
+<div id="view-postlist" class="view-section">
+
+<div class="main-container">
+
+    <div class="card-minimal" style="margin-bottom: 1.5rem;">
+
+        <h2>
+            <i class="fa-solid fa-list"></i>
+            รายการโพสต์สัตว์เลี้ยงหายทั้งหมด
+        </h2>
+
+        <p class="text-muted-sm" style="margin-bottom: 1rem;">
+            ค้นหาและกรองโพสต์ตามคำค้นหาหรือจังหวัดที่ต้องการ
+        </p>
+
+        <div class="grid-2">
+
+            <div class="form-group" style="margin-bottom:0;">
+                <input
+                    type="text"
+                    id="searchInput"
+                    class="form-control"
+                    placeholder="🔍 พิมพ์ค้นหาชื่อ/พันธุ์/จุดสังเกต..."
+                    onkeyup="filterPostCards()"
+                >
+            </div>
+
+            <div class="form-group" style="margin-bottom:0;">
+                <select
+                    id="provincePostFilter"
+                    class="form-control"
+                    onchange="filterPostCards()"
+                ></select>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div id="postCardContainer" class="post-grid"></div>
+
+</div>
+
+</div>
+
+<!-- ==================== 3. หน้าโปรไฟล์ ==================== -->
+
+<div id="view-profile" class="view-section">
+
+    <div class="main-container">
+
+        <!-- Profile Header -->
+        <div class="profile-header-card">
+
+            <div class="profile-avatar">
+                <i class="fa-solid fa-user"></i>
+            </div>
+
+            <div class="profile-header-info">
+                <span class="profile-header-label">บัญชีของฉัน</span>
+                <h2 id="profileDisplayName">โปรไฟล์ผู้ใช้งาน</h2>
+                <p>
+                    <i class="fa-solid fa-shield-halved"></i>
+                    ข้อมูลส่วนตัวของคุณ
+                </p>
+            </div>
+
+        </div>
+
+
+        <!-- ข้อมูลส่วนตัว -->
+        <div class="card-minimal profile-card">
+
+            <div class="profile-section-title">
+                <div>
+                    <span class="profile-section-icon">
+                        <i class="fa-solid fa-user"></i>
+                    </span>
+
+                    <div>
+                        <h3>ข้อมูลส่วนตัว</h3>
+                        <p>ข้อมูลพื้นฐานของคุณ</p>
+                    </div>
                 </div>
             </div>
-            <div id="map"></div>
-        </div>
-    </div>
 
-    <!-- ==================== 2. หน้ารายการโพสต์ทั้งหมด ==================== -->
-    <div id="view-postlist" class="view-section">
-        <div class="main-container">
-            <div class="card-minimal" style="margin-bottom: 1.5rem;">
-                <h2><i class="fa-solid fa-list"></i> รายการโพสต์สัตว์เลี้ยงหายทั้งหมด</h2>
-                <p class="text-muted-sm" style="margin-bottom: 1rem;">ค้นหาและกรองโพสต์ตามคำค้นหาหรือจังหวัดที่ต้องการ</p>
 
-                <div class="grid-2">
-                    <div class="form-group" style="margin-bottom:0;">
-                        <input type="text" id="searchInput" class="form-control" placeholder="🔍 พิมพ์ค้นหาชื่อ/พันธุ์/จุดสังเกต..." onkeyup="filterPostCards()">
+            <form id="profileForm" onsubmit="saveUserProfile(event)">
+
+                <input type="hidden" id="user_id" value="1">
+
+
+                <!-- ชื่อ -->
+                <div class="profile-info-row">
+
+                    <div class="profile-info-icon">
+                        <i class="fa-solid fa-id-card"></i>
                     </div>
-                    <div class="form-group" style="margin-bottom:0;">
-                        <select id="provincePostFilter" class="form-control" onchange="filterPostCards()"></select>
+
+                    <div class="profile-info-content">
+                        <label>ชื่อจริง</label>
+
+                        <div class="profile-input-wrap">
+
+                            <input
+                                type="text"
+                                class="form-control profile-private"
+                                id="first_name"
+                                required
+                                data-private="false"
+                            >
+
+                            <button
+                                type="button"
+                                class="profile-eye-btn"
+                                onclick="toggleProfileField('first_name', this)"
+                                title="ซ่อนข้อมูล"
+                            >
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+
+                        </div>
                     </div>
+
+
                 </div>
-            </div>
 
-            <div id="postCardContainer" class="post-grid"></div>
-        </div>
-    </div>
 
-    <!-- ==================== 3. หน้าโปรไฟล์ข้อมูลผู้ใช้ (SQL Integration) ==================== -->
-    <div id="view-profile" class="view-section">
-        <div class="main-container">
-            <div class="card-minimal" style="margin-bottom: 1.5rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 8px;">
-                    <h2><i class="fa-solid fa-id-card"></i> ข้อมูลโปรไฟล์ผู้ใช้งาน</h2>
-                    <span id="profileStatus" style="font-size: 0.8rem; padding: 4px 12px; border-radius: 20px;"></span>
+                <!-- นามสกุล -->
+                <div class="profile-info-row">
+
+                    <div class="profile-info-icon">
+                        <i class="fa-solid fa-signature"></i>
+                    </div>
+
+                    <div class="profile-info-content">
+                        <label>นามสกุล</label>
+
+                        <div class="profile-input-wrap">
+
+                            <input
+                                type="text"
+                                class="form-control profile-private"
+                                id="last_name"
+                                required
+                                data-private="false"
+                            >
+
+                            <button
+                                type="button"
+                                class="profile-eye-btn"
+                                onclick="toggleProfileField('last_name', this)"
+                                title="ซ่อนข้อมูล"
+                            >
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+
+                        </div>
+                    </div>
+
+
                 </div>
 
-                <form id="profileForm" onsubmit="saveUserProfile(event)">
-                    <input type="hidden" id="user_id" value="1">
+                <!-- ข้อมูลติดต่อ -->
+                <div class="profile-subsection">
 
-                    <div class="grid-2">
-                        <div class="form-group">
-                            <label>ชื่อจริง (First Name)</label>
-                            <input type="text" class="form-control" id="first_name" required>
-                        </div>
-                        <div class="form-group">
-                            <label>นามสกุล (Last Name)</label>
-                            <input type="text" class="form-control" id="last_name" required>
-                        </div>
+                    <div class="profile-subsection-title">
+                        <i class="fa-solid fa-address-book"></i>
+                        ข้อมูลติดต่อ
                     </div>
 
-                    <div class="grid-2">
-                        <div class="form-group">
-                            <label>อีเมล (Email)</label>
-                            <input type="email" class="form-control" id="email" required>
+
+                    <!-- Email -->
+                    <div class="profile-info-row">
+
+                        <div class="profile-info-icon">
+                            <i class="fa-solid fa-envelope"></i>
                         </div>
-                        <div class="form-group">
-                            <label>เบอร์โทรศัพท์ (Phone Number)</label>
-                            <input type="tel" class="form-control" id="phone" required>
+
+                        <div class="profile-info-content">
+
+                            <label>อีเมล</label>
+
+                            <div class="profile-input-wrap">
+
+                                <input
+                                    type="email"
+                                    class="form-control profile-private"
+                                    id="email"
+                                    required
+                                    data-private="false"
+                                >
+
+                                <button
+                                    type="button"
+                                    class="profile-eye-btn"
+                                    onclick="toggleProfileField('email', this)"
+                                    title="ซ่อนข้อมูล"
+                                >
+                                    <i class="fa-solid fa-eye"></i>
+                                </button>
+
+                            </div>
+
                         </div>
+
                     </div>
 
-                    <div class="grid-2">
-                        <div class="form-group">
-                            <label>จังหวัดที่อยู่อาศัย (Province)</label>
-                            <input type="text" class="form-control" id="province" required>
+
+                    <!-- Phone -->
+                    <div class="profile-info-row">
+
+                        <div class="profile-info-icon">
+                            <i class="fa-solid fa-phone"></i>
                         </div>
+
+                        <div class="profile-info-content">
+
+                            <label>เบอร์โทรศัพท์</label>
+
+                            <div class="profile-input-wrap">
+
+                                <input
+                                    type="tel"
+                                    class="form-control profile-private"
+                                    id="phone"
+                                    required
+                                    data-private="false"
+                                >
+
+                                <button
+                                    type="button"
+                                    class="profile-eye-btn"
+                                    onclick="toggleProfileField('phone', this)"
+                                    title="ซ่อนข้อมูล"
+                                >
+                                    <i class="fa-solid fa-eye"></i>
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ที่อยู่ -->
+                <div class="profile-subsection">
+
+                    <div class="profile-subsection-title">
+                        <i class="fa-solid fa-location-dot"></i>
+                        ที่อยู่
+                    </div>
+
+
+                    <div class="grid-2">
+
                         <div class="form-group">
-                            <label>โซนภาค (Region Zone)</label>
-                            <select class="form-control" id="region_zone">
+
+                            <label>จังหวัดที่อยู่อาศัย</label>
+
+                            <input
+                                type="text"
+                                class="form-control"
+                                id="province"
+                                required
+                            >
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label>โซนภาค</label>
+
+                            <select
+                                class="form-control"
+                                id="region_zone"
+                            >
                                 <option value="north">ภาคเหนือ</option>
                                 <option value="bkk">กรุงเทพฯ และปริมณฑล</option>
                                 <option value="central">ภาคกลาง</option>
                                 <option value="ne">ภาคอีสาน</option>
                                 <option value="south">ภาคใต้</option>
                             </select>
+
                         </div>
+
                     </div>
+
 
                     <div class="form-group">
-                        <label>ที่อยู่ / จุดสังเกตเพิ่มเติม (Address Details)</label>
-                        <textarea class="form-control" id="address_detail" rows="2" placeholder="บ้านเลขที่, ถนน, ตำบล, อำเภอ..."></textarea>
+
+                        <label>ที่อยู่ / จุดสังเกตเพิ่มเติม</label>
+
+                        <textarea
+                            class="form-control"
+                            id="address_detail"
+                            rows="3"
+                            placeholder="บ้านเลขที่, ถนน, ตำบล, อำเภอ..."
+                        ></textarea>
+
                     </div>
 
-                    <button type="submit" class="btn-primary" style="margin-top: 1rem;">
-                        <i class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูลโปรไฟล์ลงฐานข้อมูล
-                    </button>
-                </form>
-            </div>
-
-            <!-- การ์ดแยกสำหรับ Face ID (เก็บไว้สำหรับ Demo วิชา Deep Learning) -->
-            <div class="card-minimal" style="text-align:center;">
-                <i class="fa-solid fa-graduation-cap" style="font-size: 1.6rem; color: var(--primary-orange);"></i>
-                <p style="margin: 8px 0 4px;">ต้องการยืนยันตัวตนเพิ่มเติมด้วย Face ID </p>
-                <button type="button" class="btn-secondary-sm" onclick="switchTab('faceid')">ไปหน้าสแกน Face ID</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ==================== 4. หน้าการแชทระหว่าง User ==================== -->
-    <div id="view-chat" class="view-section">
-        <div class="main-container" style="height: calc(100vh - 140px); display: flex;">
-            <div class="card-minimal" style="flex: 1; padding: 0; display: flex; overflow: hidden;">
-                <div class="chat-sidebar">
-                    <h3 style="font-size: 1rem; margin-bottom: 1rem;">กล่องข้อความ</h3>
-                    <div id="conversationList"></div>
-                </div>
-                <div style="flex: 1; display: flex; flex-direction: column; background: #FAFAFA; min-width: 0;">
-                    <div id="chatWithLabel" style="padding: 1rem; border-bottom: 1px solid var(--border-light); font-weight: 500;"></div>
-                    <div id="chatMessages" style="flex: 1; padding: 1.5rem; display: flex; flex-direction: column; gap: 10px; overflow-y: auto;"></div>
-                    <form id="chatForm" onsubmit="sendChatMessage(event)" style="padding: 1rem; border-top: 1px solid var(--border-light); display: flex; gap: 10px; background: white;">
-                        <input type="text" id="chatInput" class="form-control" placeholder="พิมพ์ข้อความตอบกลับ...">
-                        <button type="submit" class="btn-primary" style="width: auto; padding: 0 1.5rem;">ส่ง</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ==================== 5. หน้าโพสต์ตามหา ==================== -->
-    <div id="view-post" class="view-section">
-        <div class="main-container">
-            <div class="card-minimal" style="max-width: 600px; margin: 0 auto;">
-                <h2 style="font-size: 1.3rem; margin-bottom: 0.5rem;">โพสต์ประกาศตามหาสัตว์เลี้ยง</h2>
-                <p class="text-muted-sm" style="margin-bottom: 1.5rem;">กรอกรายละเอียด แนบรูปภาพ และระบุตำแหน่งจุดที่หาย</p>
-
-                <form onsubmit="handlePostSubmit(event)">
-                    <div class="form-group">
-                        <label>ชื่อสัตว์เลี้ยง / พันธุ์</label>
-                        <input type="text" class="form-control" id="postPetName" placeholder="เช่น น้องส้ม (แมวไทย)" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label>เลือกจังหวัดที่หาย</label>
-                        <select class="form-control" id="postProvince" required></select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>รายละเอียดสัตว์เลี้ยงที่หาย</label>
-                        <textarea class="form-control" id="postDescription" rows="3" placeholder="ระบุปลอกคอ จุดสังเกต หรือพฤติกรรม..."></textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label>แนบรูปภาพสัตว์เลี้ยง</label>
-                        <input type="file" class="form-control" id="postImage" accept="image/*">
-                    </div>
-
-                    <div class="form-group">
-                        <label>ระบุพิกัดบนแผนที่ (คลิกเพื่อเลือกจุด)</label>
-                        <div id="postMap" style="height: 180px; border-radius: 10px;"></div>
-                        <input type="hidden" id="postLat">
-                        <input type="hidden" id="postLng">
-                    </div>
-
-                    <button type="submit" class="btn-primary" style="margin-top: 1rem;">สร้างประกาศตามหา</button>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- ==================== 6. หน้าการแจ้งเตือน ==================== -->
-    <div id="view-noti" class="view-section">
-        <div class="main-container" style="max-width: 600px;">
-            <h2 style="font-size: 1.2rem; margin-bottom: 1.5rem;">🔔 การแจ้งเตือนความเคลื่อนไหว</h2>
-            <div id="notiContainer" style="display: flex; flex-direction: column; gap: 10px;"></div>
-        </div>
-    </div>
-
-    <!-- ==================== 7. หน้าเข้าสู่ระบบ / สมัครสมาชิก (Email หรือ Username + รหัสผ่าน) ==================== -->
-    <div id="view-auth" class="view-section">
-        <div class="main-container" style="max-width: 420px;">
-            <div class="card-minimal">
-                <div class="auth-tabs">
-                    <button type="button" class="auth-tab-btn active" id="authTabLogin" onclick="switchAuthTab('login')">เข้าสู่ระบบ</button>
-                    <button type="button" class="auth-tab-btn" id="authTabRegister" onclick="switchAuthTab('register')">สมัครสมาชิก</button>
                 </div>
 
-                <!-- ฟอร์มเข้าสู่ระบบ -->
-                <form id="loginForm" onsubmit="handleLogin(event)">
-                    <div class="form-group">
-                        <label>อีเมล หรือ ชื่อผู้ใช้ (Username)</label>
-                        <input type="text" class="form-control" id="loginIdentifier" required>
-                    </div>
-                    <div class="form-group">
-                        <label>รหัสผ่าน</label>
-                        <input type="password" class="form-control" id="loginPassword" required>
-                    </div>
-                    <p id="loginError" class="auth-error"></p>
-                    <button type="submit" class="btn-primary">เข้าสู่ระบบ</button>
-                </form>
 
-                <!-- ฟอร์มสมัครสมาชิก -->
-                <form id="registerForm" style="display:none;" onsubmit="handleRegister(event)">
-                    <div class="grid-2">
-                        <div class="form-group">
-                            <label>ชื่อจริง</label>
-                            <input type="text" class="form-control" id="regFirstName" required>
-                        </div>
-                        <div class="form-group">
-                            <label>นามสกุล</label>
-                            <input type="text" class="form-control" id="regLastName" required>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>ชื่อผู้ใช้ (Username)</label>
-                        <input type="text" class="form-control" id="regUsername" required>
-                    </div>
-                    <div class="form-group">
-                        <label>อีเมล</label>
-                        <input type="email" class="form-control" id="regEmail" required>
-                    </div>
-                    <div class="form-group">
-                        <label>รหัสผ่าน (อย่างน้อย 6 ตัวอักษร)</label>
-                        <input type="password" class="form-control" id="regPassword" required minlength="6">
-                    </div>
-                    <p id="registerError" class="auth-error"></p>
-                    <button type="submit" class="btn-primary">สมัครสมาชิก</button>
-                </form>
-
-                <hr style="border-color: var(--border-light); margin: 1.5rem 0;">
-
-                <div style="text-align:center;">
-                    <p class="text-muted-sm" style="margin-bottom: 0.8rem;">
-                        <i class="fa-solid fa-face-smile"></i>
-                        ต้องการเข้าสู่ระบบด้วยใบหน้า?
-                    </p>
+                <!-- ปุ่มบันทึก -->
+                <div class="profile-save-area">
 
                     <button
-                        type="button"
-                        class="btn-secondary-sm"
-                        onclick="window.goToFaceLogin()"
+                        type="submit"
+                        class="btn-primary profile-save-btn"
                     >
-                        เข้าสู่ระบบด้วยใบหน้า
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        บันทึกข้อมูลโปรไฟล์
                     </button>
+
+                    <span class="profile-save-hint">
+                        <i class="fa-solid fa-lock"></i>
+                        ข้อมูลของคุณจะถูกบันทึกลงบัญชีส่วนตัว
+                    </span>
+
                 </div>
-            </div>
+
+            </form>
+
         </div>
+
     </div>
 
-    <!-- ==================== 8. หน้าสแกน Face ID (แยกจากหน้า login หลัก - สำหรับ Demo วิชา Deep Learning) ==================== -->
-    <div id="view-faceid" class="view-section">
-        <div class="main-container" style="max-width: 400px; text-align: center;">
-            <div class="card-minimal">
-                <i class="fa-solid fa-face-viewfinder" style="font-size: 3.5rem; color: var(--primary-orange); margin-bottom: 1rem;"></i>
-                <h2 style="font-size: 1.3rem;">ยืนยันตัวตนด้วย Face ID</h2>
-                <p class="text-muted-sm" style="margin-top: 4px; margin-bottom: 1.5rem;">Demo การสแกนใบหน้า (วิชา Deep Learning) - สแกนใบหน้าเพื่อยืนยันตัวตนเจ้าของบัญชี</p>
+</div>
+<!-- ==================== 4. หน้าการแชท ==================== -->
 
-                <div style="
+<div id="view-chat" class="view-section">
+
+<div
+    class="main-container"
+    style="
+        height: calc(100vh - 140px);
+        display: flex;
+    "
+>
+
+    <div
+        class="card-minimal"
+        style="
+            flex: 1;
+            padding: 0;
+            display: flex;
+            overflow: hidden;
+        "
+    >
+
+        <div class="chat-sidebar">
+
+            <h3 style="
+                font-size: 1rem;
+                margin-bottom: 1rem;
+            ">
+                กล่องข้อความ
+            </h3>
+
+            <div id="conversationList"></div>
+
+        </div>
+
+
+        <div
+            style="
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                background: #FAFAFA;
+                min-width: 0;
+            "
+        >
+
+            <div
+                id="chatWithLabel"
+                style="
                     padding: 1rem;
-                    border: 2px dashed var(--primary-orange);
-                    border-radius: 12px;
-                    background: #000;
-                    margin-bottom: 1.5rem;
-                ">
+                    border-bottom: 1px solid var(--border-light);
+                    font-weight: 500;
+                "
+            ></div>
 
-                    <div id="faceCameraContainer"
-                        style="
-                            position: relative;
-                            width: 100%;
-                            max-width: 350px;
-                            margin: auto;
-                            overflow: hidden;
-                            border-radius: 10px;
-                        ">
 
-                        <video id="faceVideo"
-                            autoplay
-                            muted
-                            playsinline
-                            style="
-                                width: 100%;
-                                display: block;
-                                border-radius: 10px;
-                                transform: scaleX(-1);
-                            ">
-                        </video>
+            <div
+                id="chatMessages"
+                style="
+                    flex: 1;
+                    padding: 1.5rem;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 10px;
+                    overflow-y: auto;
+                "
+            ></div>
 
-                        <canvas id="faceOverlay"
-                                style="
-                                    position: absolute;
-                                    top: 0;
-                                    left: 0;
-                                    width: 100%;
-                                    height: 100%;
-                                    pointer-events: none;
-                                    transform: scaleX(-1);
-                                    z-index: 10;
-                                ">
-                        </canvas>
 
-                    </div>
+            <form
+                id="chatForm"
+                onsubmit="sendChatMessage(event)"
+                style="
+                    padding: 1rem;
+                    border-top: 1px solid var(--border-light);
+                    display: flex;
+                    gap: 10px;
+                    background: white;
+                "
+            >
+
+                <input
+                    type="text"
+                    id="chatInput"
+                    class="form-control"
+                    placeholder="พิมพ์ข้อความตอบกลับ..."
+                >
+
+                <button
+                    type="submit"
+                    class="btn-primary"
+                    style="
+                        width: auto;
+                        padding: 0 1.5rem;
+                    "
+                >
+                    ส่ง
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+</div>
+
+<!-- ==================== 5. หน้าโพสต์ตามหา ==================== -->
+
+<div id="view-post" class="view-section">
+
+<div class="main-container">
+
+    <div
+        class="card-minimal"
+        style="
+            max-width: 600px;
+            margin: 0 auto;
+        "
+    >
+
+        <h2 style="
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+        ">
+            โพสต์ประกาศตามหาสัตว์เลี้ยง
+        </h2>
+
+        <p
+            class="text-muted-sm"
+            style="margin-bottom: 1.5rem;"
+        >
+            กรอกรายละเอียด แนบรูปภาพ
+            และระบุตำแหน่งจุดที่หาย
+        </p>
+
+
+        <form onsubmit="handlePostSubmit(event)">
+
+            <div class="form-group">
+
+                <label>
+                    ชื่อสัตว์เลี้ยง / พันธุ์
+                </label>
+
+                <input
+                    type="text"
+                    class="form-control"
+                    id="postPetName"
+                    placeholder="เช่น น้องส้ม (แมวไทย)"
+                    required
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label>
+                    เลือกจังหวัดที่หาย
+                </label>
+
+                <select
+                    class="form-control"
+                    id="postProvince"
+                    required
+                ></select>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label>
+                    รายละเอียดสัตว์เลี้ยงที่หาย
+                </label>
+
+                <textarea
+                    class="form-control"
+                    id="postDescription"
+                    rows="3"
+                    placeholder="ระบุปลอกคอ จุดสังเกต หรือพฤติกรรม..."
+                ></textarea>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label>
+                    แนบรูปภาพสัตว์เลี้ยง
+                </label>
+
+                <input
+                    type="file"
+                    class="form-control"
+                    id="postImage"
+                    accept="image/*"
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label>
+                    ระบุพิกัดบนแผนที่ (คลิกเพื่อเลือกจุด)
+                </label>
+
+                <div
+                    id="postMap"
+                    style="
+                        height: 180px;
+                        border-radius: 10px;
+                    "
+                ></div>
+
+                <input
+                    type="hidden"
+                    id="postLat"
+                >
+
+                <input
+                    type="hidden"
+                    id="postLng"
+                >
+
+            </div>
+
+
+            <button
+                type="submit"
+                class="btn-primary"
+                style="margin-top: 1rem;"
+            >
+                สร้างประกาศตามหา
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+</div>
+
+<!-- ==================== 6. หน้าแจ้งเตือน ==================== -->
+
+<div id="view-noti" class="view-section">
+
+<div
+    class="main-container"
+    style="max-width: 600px;"
+>
+
+    <h2
+        style="
+            font-size: 1.2rem;
+            margin-bottom: 1.5rem;
+        "
+    >
+        🔔 การแจ้งเตือนความเคลื่อนไหว
+    </h2>
+
+    <div
+        id="notiContainer"
+        style="
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        "
+    ></div>
+
+</div>
+
+</div>
+
+<!-- ==================== 7. หน้าเข้าสู่ระบบ / สมัครสมาชิก ==================== -->
+
+<div id="view-auth" class="view-section">
+
+<div
+    class="main-container"
+    style="max-width: 420px;"
+>
+
+    <div class="card-minimal">
+
+        <div class="auth-tabs">
+
+            <button
+                type="button"
+                class="auth-tab-btn active"
+                id="authTabLogin"
+                onclick="switchAuthTab('login')"
+            >
+                เข้าสู่ระบบ
+            </button>
+
+            <button
+                type="button"
+                class="auth-tab-btn"
+                id="authTabRegister"
+                onclick="switchAuthTab('register')"
+            >
+                สมัครสมาชิก
+            </button>
+
+        </div>
+
+
+        <!-- ฟอร์มเข้าสู่ระบบ -->
+        <form
+            id="loginForm"
+            onsubmit="handleLogin(event)"
+        >
+
+            <div class="form-group">
+
+                <label>
+                    อีเมล หรือ ชื่อผู้ใช้ (Username)
+                </label>
+
+                <input
+                    type="text"
+                    class="form-control"
+                    id="loginIdentifier"
+                    required
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label>
+                    รหัสผ่าน
+                </label>
+
+                <input
+                    type="password"
+                    class="form-control"
+                    id="loginPassword"
+                    required
+                >
+
+            </div>
+
+
+            <p
+                id="loginError"
+                class="auth-error"
+            ></p>
+
+
+            <button
+                type="submit"
+                class="btn-primary"
+            >
+                เข้าสู่ระบบ
+            </button>
+
+        </form>
+
+
+        <!-- ฟอร์มสมัครสมาชิก -->
+        <form
+            id="registerForm"
+            style="display:none;"
+            onsubmit="handleRegister(event)"
+        >
+
+            <div class="grid-2">
+
+                <div class="form-group">
+
+                    <label>
+                        ชื่อจริง
+                    </label>
+
+                    <input
+                        type="text"
+                        class="form-control"
+                        id="regFirstName"
+                        required
+                    >
 
                 </div>
 
-                <p id="faceStatus" class="text-muted-sm">
-                    กดปุ่มเพื่อเปิดกล้อง
+
+                <div class="form-group">
+
+                    <label>
+                        นามสกุล
+                    </label>
+
+                    <input
+                        type="text"
+                        class="form-control"
+                        id="regLastName"
+                        required
+                    >
+
+                </div>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label>
+                    ชื่อผู้ใช้ (Username)
+                </label>
+
+                <input
+                    type="text"
+                    class="form-control"
+                    id="regUsername"
+                    required
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label>
+                    อีเมล
+                </label>
+
+                <input
+                    type="email"
+                    class="form-control"
+                    id="regEmail"
+                    required
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label>
+                    รหัสผ่าน (อย่างน้อย 6 ตัวอักษร)
+                </label>
+
+                <input
+                    type="password"
+                    class="form-control"
+                    id="regPassword"
+                    required
+                    minlength="6"
+                >
+
+            </div>
+
+
+            <p
+                id="registerError"
+                class="auth-error"
+            ></p>
+
+
+            <button
+                type="submit"
+                class="btn-primary"
+            >
+                สมัครสมาชิก
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+</div>
+
+<!-- ==================== 8. หน้าสแกนหาสัตว์เลี้ยง ==================== -->
+
+<div id="view-petscan" class="view-section">
+
+    <div class="pet-scan-container">
+
+        <div class="pet-scan-card">
+
+            <!-- Header -->
+            <div class="pet-scan-header">
+
+                <div class="pet-scan-header-icon">
+                    <i class="fa-solid fa-paw"></i>
+                </div>
+
+                <h2>
+                    สแกนหาสัตว์เลี้ยง
+                </h2>
+
+                <p class="text-muted-sm">
+                    สแกนใบหน้าหรือโครงสร้างของสัตว์เลี้ยง
+                    เพื่อค้นหาโพสต์ที่มีลักษณะใกล้เคียง
                 </p>
+
+            </div>
+
+
+            <!-- Camera -->
+            <div class="pet-camera-wrapper">
+
+                <video
+                    id="petVideo"
+                    autoplay
+                    muted
+                    playsinline
+                ></video>
+
+                <canvas
+                    id="petOverlay"
+                ></canvas>
+
+            </div>
+
+
+            <!-- Status -->
+            <p
+                id="petScanStatus"
+                class="pet-scan-status"
+            >
+                กดปุ่มเพื่อเปิดกล้อง
+            </p>
+
+
+            <!-- Controls -->
+            <div class="pet-scan-controls">
 
                 <button
                     type="button"
-                    class="btn-secondary-sm"
-                    onclick="window.startFaceScanCamera()"
+                    class="pet-camera-switch-btn"
+                    onclick="window.startPetCamera()"
                 >
+                    <i class="fa-solid fa-camera"></i>
                     เปิดกล้อง
                 </button>
 
-                <button type="button"
-                        onclick="window.registerAllFaceAngles()"
-                        class="btn-primary">
-                    ลงทะเบียนใบหน้า
+                <button
+                    type="button"
+                    class="pet-scan-start-btn"
+                    onclick="window.startPetScan && window.startPetScan()"
+                >
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    เริ่มสแกน
                 </button>
 
-                <button type="button"
-                    onclick="window.testFaceDirection()"
-                    class="btn-secondary-sm">
-                ทดสอบทิศหน้า
-            </button>
             </div>
+
+
+            <!-- คำแนะนำ -->
+            <div class="pet-scan-guide">
+
+                <div class="pet-scan-guide-title">
+                    <i class="fa-solid fa-circle-info"></i>
+                    วิธีใช้งาน
+                </div>
+
+                <ul>
+                    <li>พยายามให้เห็นใบหน้าชัดเจน</li>
+                    <li>หลีกเลี่ยงบริเวณที่มืดหรือแสงย้อน</li>
+                    <li>เมื่อพร้อม กดปุ่ม “เริ่มสแกน”</li>
+                </ul>
+
+            </div>
+
+
+            <!-- ผลลัพธ์ -->
+            <div
+                id="petScanResult"
+                class="pet-scan-result"
+                style="display: none;"
+            >
+
+                <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">
+                    <i class="fa-solid fa-paw text-orange"></i>
+                    ผลการค้นหา
+                </h3>
+
+                <p class="text-muted-sm">
+                    ระบบจะแสดงโพสต์ที่มีลักษณะใกล้เคียง
+                    กับสัตว์ที่สแกน
+                </p>
+
+            </div>
+
         </div>
+
     </div>
 
-    <!-- Leaflet + ไฟล์ JavaScript ของแอป (แยกไฟล์ตามหน้าที่ ลดความยุ่งเหยิง) -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="js/provinces-data.js"></script>
-    <script src="js/api.js"></script>
-    <script src="js/map.js"></script>
-    <script src="js/posts.js"></script>
-    <script src="js/profile.js"></script>
-    <script src="js/notifications.js"></script>
-    <script src="js/chat.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/nav.js"></script>
-    <script src="js/app.js"></script>
+</div>
+<!-- Leaflet -->
 
-    <script src="js/fab.js"></script>
-    
-    <!-- Face API -->
-    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
-    <script src="js/face.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- ไฟล์ JavaScript ของแอป -->
+
+<script src="js/provinces-data.js"></script>
+
+<script src="js/api.js"></script>
+
+<script src="js/map.js"></script>
+
+<script src="js/posts.js"></script>
+
+<script src="js/profile.js"></script>
+
+<script src="js/notifications.js"></script>
+
+<script src="js/chat.js"></script>
+
+<script src="js/auth.js"></script>
+
+<script src="js/nav.js"></script>
+
+<script src="js/app.js"></script>
+
+<script src="js/fab.js"></script>
+
+<script src="js/face.js"></script>
+
 </body>
 </html>

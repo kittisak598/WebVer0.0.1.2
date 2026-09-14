@@ -4,10 +4,11 @@ const cors = require("cors");
 const db = require("./db");
 const multer = require("multer");
 
+const { createPetEmbedding } = require("./petEmbedding");
+
 const app = express();
 
 console.log("🔥 SERVER FILE:", __filename);
-console.log("🔥 FACE ROUTE LOADED");
 
 app.use(cors());
 app.use(express.json());
@@ -291,6 +292,7 @@ success:true
 // ===========================
 // GET POSTS
 // ===========================
+
 app.get("/posts", (req, res) => {
 
     db.query(`
@@ -323,7 +325,7 @@ app.get("/posts", (req, res) => {
 // ===========================
 // CREATE POST
 // ===========================
-app.post("/posts", (req, res) => {
+app.post("/posts", async (req, res) => {
 
     console.log("ข้อมูลที่ /posts ได้รับ:");
     console.log(req.body);
@@ -340,54 +342,285 @@ app.post("/posts", (req, res) => {
         longitude
     } = req.body;
 
-    db.query(
-        `INSERT INTO posts
-        (
-            user_id,
-            pet_name,
-            pet_type,
-            breed,
-            province,
-            description,
-            image,
-            latitude,
-            longitude
-        )
-        VALUES(?,?,?,?,?,?,?,?,?)`,
-        [
-            user_id,
-            pet_name,
-            pet_type,
-            breed,
-            province,
-            description,
-            image || "",
-            latitude,
-            longitude
-        ],
-        (err, result) => {
+    try {
 
-            if (err) {
-                console.log(err);
+        let petEmbedding = null;
 
-                return res.status(500).json({
-                    success: false,
-                    message: err.sqlMessage
-                });
-            }
+        // ถ้ามีรูป ให้สร้าง Pet Embedding
+        if (image) {
 
-            res.json({
-                success: true,
-                id: result.insertId
-            });
+            const imagePath = path.join(
+                __dirname,
+                "..",
+                image
+            );
 
+            console.log("กำลังสร้าง Pet Embedding...");
+            console.log("Image path:", imagePath);
+
+            petEmbedding =
+                await createPetEmbedding(imagePath);
+
+            console.log(
+                "สร้าง Pet Embedding สำเร็จ ✅"
+            );
+
+            console.log(
+                "จำนวนค่า:",
+                petEmbedding.length
+            );
         }
-    );
+
+        db.query(
+            `INSERT INTO posts
+            (
+                user_id,
+                pet_name,
+                pet_type,
+                breed,
+                province,
+                description,
+                image,
+                latitude,
+                longitude,
+                pet_embedding
+            )
+            VALUES(?,?,?,?,?,?,?,?,?,?)`,
+            [
+                user_id,
+                pet_name,
+                pet_type,
+                breed,
+                province,
+                description,
+                image || "",
+                latitude,
+                longitude,
+                petEmbedding
+                    ? JSON.stringify(petEmbedding)
+                    : null
+            ],
+            (err, result) => {
+
+                if (err) {
+
+                    console.log(err);
+
+                    return res.status(500).json({
+                        success: false,
+                        message: err.sqlMessage
+                    });
+                }
+
+                res.json({
+                    success: true,
+                    id: result.insertId
+                });
+
+            }
+        );
+
+    } catch (error) {
+
+        console.error(
+            "สร้าง Pet Embedding ไม่สำเร็จ:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            message: "ไม่สามารถสร้าง Pet Embedding ได้"
+        });
+    }
+});
+
+// ===========================
+// PET SCAN - FIND SIMILAR PETS
+// ===========================
+
+function cosineSimilarity(a, b) {
+
+    if (!Array.isArray(a) || !Array.isArray(b)) {
+        return 0;
+    }
+
+    if (a.length !== b.length) {
+        return 0;
+    }
+
+    let dotProduct = 0;
+    let magnitudeA = 0;
+    let magnitudeB = 0;
+
+    for (let i = 0; i < a.length; i++) {
+
+        dotProduct += a[i] * b[i];
+
+        magnitudeA += a[i] * a[i];
+
+        magnitudeB += b[i] * b[i];
+    }
+
+    if (magnitudeA === 0 || magnitudeB === 0) {
+        return 0;
+    }
+
+    return dotProduct /
+        (
+            Math.sqrt(magnitudeA) *
+            Math.sqrt(magnitudeB)
+        );
+}
+
+
+app.post("/pet-scan", async (req, res) => {
+
+    try {
+
+        const { image } = req.body;
+
+        if (!image) {
+
+            return res.status(400).json({
+                success: false,
+                message: "ไม่ได้ส่งรูปสัตว์"
+            });
+        }
+
+        const imagePath = path.join(
+            __dirname,
+            "..",
+            image
+        );
+
+        console.log("\n==============================");
+        console.log("PET SCAN");
+        console.log("==============================");
+
+        console.log(
+            "กำลังสร้าง Embedding จากรูปที่สแกน..."
+        );
+
+        const scanEmbedding =
+            await createPetEmbedding(imagePath);
+
+        console.log(
+            "Scan Embedding สำเร็จ:",
+            scanEmbedding.length
+        );
+
+
+        // ดึงโพสต์ที่มี Embedding
+        db.query(
+            `
+            SELECT
+                posts.*,
+                users.first_name,
+                users.last_name
+            FROM posts
+            LEFT JOIN users
+            ON posts.user_id = users.id
+            WHERE posts.pet_embedding IS NOT NULL
+            `,
+            (err, rows) => {
+
+                if (err) {
+
+                    console.error(err);
+
+                    return res.status(500).json({
+                        success: false,
+                        message: err.sqlMessage
+                    });
+                }
+
+
+                const results = [];
+
+
+                for (const post of rows) {
+
+                    try {
+
+                        const storedEmbedding =
+                            JSON.parse(
+                                post.pet_embedding
+                            );
+
+                        const similarity =
+                            cosineSimilarity(
+                                scanEmbedding,
+                                storedEmbedding
+                            );
+
+                        results.push({
+                            ...post,
+                            similarity
+                        });
+
+                    } catch (error) {
+
+                        console.log(
+                            "อ่าน Embedding ไม่ได้ของ post:",
+                            post.id
+                        );
+
+                    }
+                }
+
+
+                // เรียงจากเหมือนมาก → เหมือนน้อย
+                results.sort(
+                    (a, b) =>
+                        b.similarity -
+                        a.similarity
+                );
+
+
+                // เอาแค่ 10 อันดับแรก
+                const topResults =
+                    results.slice(0, 10);
+
+
+                console.log(
+                    "\nผลการค้นหา:"
+                );
+
+                topResults.forEach((post, index) => {
+
+                    console.log(
+                        `${index + 1}. Post ${post.id} - similarity: ${post.similarity}`
+                    );
+
+                });
+
+
+                res.json({
+                    success: true,
+                    data: topResults
+                });
+
+            }
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Pet Scan Error:",
+            error
+        );
+
+        res.status(500).json({
+            success: false,
+            message: "ไม่สามารถสแกนสัตว์เลี้ยงได้"
+        });
+    }
 });
 
 // ===========================
 // DELETE POST
 // ===========================
+
 app.delete("/posts/:id", (req, res) => {
 
     db.query(
@@ -553,6 +786,7 @@ app.get("/chat-contacts/:userId", (req, res) => {
 // ===========================
 // GET MESSAGES
 // ===========================
+
 app.get("/messages/:user1/:user2", (req, res) => {
 
     const { user1, user2 } = req.params;
@@ -634,403 +868,6 @@ app.post("/messages", (req, res) => {
 
         }
 
-    );
-
-});
-
-// ===========================
-// REGISTER FACE
-// ===========================
-
-app.post("/face/register", (req, res) => {
-
-    const {
-        user_id,
-        face_angle,
-        face_embedding
-    } = req.body;
-
-    // ==============================
-    // ตรวจสอบข้อมูล
-    // ==============================
-
-    if (!user_id) {
-
-        return res.status(400).json({
-            success: false,
-            message: "ไม่พบ User ID"
-        });
-
-    }
-
-    if (!face_angle) {
-
-        return res.status(400).json({
-            success: false,
-            message: "ไม่พบมุมใบหน้า"
-        });
-
-    }
-
-    const allowedAngles = [
-        "front",
-        "left",
-        "right"
-    ];
-
-    if (!allowedAngles.includes(face_angle)) {
-
-        return res.status(400).json({
-            success: false,
-            message: "มุมใบหน้าไม่ถูกต้อง"
-        });
-
-    }
-
-    if (!Array.isArray(face_embedding)) {
-
-        return res.status(400).json({
-            success: false,
-            message: "ไม่พบ Face Embedding"
-        });
-
-    }
-
-    if (face_embedding.length !== 128) {
-
-        return res.status(400).json({
-            success: false,
-            message: "Face Embedding ต้องมี 128 ค่า"
-        });
-
-    }
-
-
-    // ==============================
-    // ตรวจสอบว่า User มีอยู่จริง
-    // ==============================
-
-    db.query(
-        "SELECT id FROM users WHERE id = ?",
-        [user_id],
-        (err, users) => {
-
-            if (err) {
-
-                console.error(err);
-
-                return res.status(500).json({
-                    success: false,
-                    message: "เกิดข้อผิดพลาดในการตรวจสอบ User"
-                });
-
-            }
-
-            if (users.length === 0) {
-
-                return res.status(404).json({
-                    success: false,
-                    message: "ไม่พบผู้ใช้งาน"
-                });
-
-            }
-
-
-            // ==============================
-            // ลบ Face มุมเดิมของ User นี้
-            // ==============================
-
-            db.query(
-                `DELETE FROM face_data
-                 WHERE user_id = ?
-                 AND face_angle = ?`,
-                [user_id, face_angle],
-                (deleteErr) => {
-
-                    if (deleteErr) {
-
-                        console.error(deleteErr);
-
-                        return res.status(500).json({
-                            success: false,
-                            message: "ไม่สามารถบันทึก Face ID ได้"
-                        });
-
-                    }
-
-
-                    // ==============================
-                    // บันทึก Face ใหม่
-                    // ==============================
-
-                    db.query(
-                        `INSERT INTO face_data
-                        (
-                            user_id,
-                            face_embedding,
-                            face_angle
-                        )
-                        VALUES (?, ?, ?)`,
-                        [
-                            user_id,
-                            JSON.stringify(face_embedding),
-                            face_angle
-                        ],
-                        (insertErr) => {
-
-                            if (insertErr) {
-
-                                console.error(insertErr);
-
-                                return res.status(500).json({
-                                    success: false,
-                                    message: "ไม่สามารถบันทึก Face Embedding ได้"
-                                });
-
-                            }
-
-                            console.log(
-                                "FACE REGISTER → User:",
-                                user_id,
-                                "| Angle:",
-                                face_angle
-                            );
-
-                            return res.json({
-
-                                success: true,
-
-                                message:
-                                    `ลงทะเบียนใบหน้า ${face_angle} สำเร็จ`
-
-                            });
-
-                        }
-                    );
-
-                }
-            );
-
-        }
-    );
-
-});
-
-// ===========================
-// FACE LOGIN
-// ===========================
-
-app.post("/face/login", (req, res) => {
-
-    const {
-        face_embedding
-    } = req.body;
-
-    if (!Array.isArray(face_embedding)) {
-
-        return res.status(400).json({
-            success: false,
-            message: "ไม่พบ Face Embedding"
-        });
-
-    }
-
-    if (face_embedding.length !== 128) {
-
-        return res.status(400).json({
-            success: false,
-            message: "Face Embedding ต้องมี 128 ค่า"
-        });
-
-    }
-
-    // ดึง Face Embedding ทั้งหมด
-    db.query(
-        `SELECT
-            face_data.user_id,
-            face_data.face_embedding,
-            face_data.face_angle,
-            users.first_name,
-            users.last_name,
-            users.username,
-            users.email
-         FROM face_data
-         INNER JOIN users
-         ON face_data.user_id = users.id`,
-        (err, rows) => {
-
-            if (err) {
-
-                return res.status(500).json({
-                    success: false,
-                    message: err.sqlMessage
-                });
-
-            }
-
-            if (rows.length === 0) {
-
-                return res.json({
-                    success: false,
-                    message: "ยังไม่มีผู้ใช้งานที่ลงทะเบียน Face ID"
-                });
-
-            }
-
-            let bestMatch = null;
-            let bestDistance = Infinity;
-
-            // เก็บคะแนนที่ดีที่สุดของแต่ละ User
-            const userMatches = {};
-
-            rows.forEach(row => {
-
-                let storedEmbedding;
-
-                try {
-
-                    storedEmbedding =
-                        typeof row.face_embedding === "string"
-                            ? JSON.parse(row.face_embedding)
-                            : row.face_embedding;
-
-                } catch (error) {
-
-                    console.log(
-                        "❌ อ่าน Face Embedding ไม่ได้ User:",
-                        row.user_id
-                    );
-
-                    return;
-                }
-
-                if (!Array.isArray(storedEmbedding)) {
-                    return;
-                }
-
-                if (storedEmbedding.length !== 128) {
-                    return;
-                }
-
-                // Euclidean Distance
-                let distance = 0;
-
-                for (let i = 0; i < 128; i++) {
-
-                    const difference =
-                        face_embedding[i] - storedEmbedding[i];
-
-                    distance += difference * difference;
-
-                }
-
-                distance = Math.sqrt(distance);
-
-                console.log(
-                    "FACE CHECK →",
-                    "User:", row.user_id,
-                    "| Angle:", row.face_angle,
-                    "| Distance:", distance
-                );
-
-                // เก็บ Face ที่ดีที่สุดของ User แต่ละคน
-                if (!userMatches[row.user_id]) {
-
-                    userMatches[row.user_id] = {
-                        user: row,
-                        bestDistance: distance,
-                        bestAngle: row.face_angle
-                    };
-
-                } else if (
-                    distance < userMatches[row.user_id].bestDistance
-                ) {
-
-                    userMatches[row.user_id].bestDistance =
-                        distance;
-
-                    userMatches[row.user_id].bestAngle =
-                        row.face_angle;
-
-                    userMatches[row.user_id].user =
-                        row;
-
-                }
-
-            });
-
-            // หา User ที่มี Face ตรงที่สุด
-            Object.values(userMatches).forEach(match => {
-
-                console.log(
-                    "USER RESULT →",
-                    "User:", match.user.user_id,
-                    "| Best Angle:", match.bestAngle,
-                    "| Best Distance:", match.bestDistance
-                );
-
-                if (match.bestDistance < bestDistance) {
-
-                    bestDistance = match.bestDistance;
-
-                    bestMatch = match.user;
-
-                    bestMatch.matchAngle =
-                        match.bestAngle;
-
-                }
-
-            });
-
-            console.log("==============================");
-            console.log("FACE LOGIN RESULT");
-            console.log("Best User ID:", bestMatch?.user_id);
-            console.log("Best Angle:", bestMatch?.matchAngle);
-            console.log("Best Distance:", bestDistance);
-            console.log("==============================");
-
-
-            // Threshold
-            const FACE_THRESHOLD = 0.6;
-
-            if (!bestMatch || bestDistance > FACE_THRESHOLD) {
-
-                return res.json({
-                    success: false,
-                    message: "ไม่สามารถยืนยันใบหน้าได้",
-                    distance: bestDistance
-                });
-
-            }
-
-            // พบผู้ใช้
-            res.json({
-
-                success: true,
-
-                message: "เข้าสู่ระบบด้วย Face ID สำเร็จ",
-
-                data: {
-
-                    id: bestMatch.user_id,
-
-                    first_name: bestMatch.first_name,
-
-                    last_name: bestMatch.last_name,
-
-                    username: bestMatch.username,
-
-                    email: bestMatch.email,
-
-                    token: "demo-token",
-
-                    distance: bestDistance
-
-                }
-
-            });
-
-        }
     );
 
 });

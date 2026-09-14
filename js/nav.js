@@ -8,7 +8,7 @@ const AUTH_REQUIRED_TABS = ['profile', 'chat', 'noti', 'post'];
 function switchTab(tabId) {
 
   if (
-    tabId !== "faceid" &&
+    tabId !== "petscan" &&
     typeof stopFaceCamera === "function"
   ) {
     stopFaceCamera();
