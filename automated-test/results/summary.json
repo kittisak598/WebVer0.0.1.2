@@ -1,0 +1,37 @@
+{
+  "dataset": {
+    "imagesTested": 1000,
+    "animalsTested": 196,
+    "pairsTested": 499500
+  },
+  "similarity": {
+    "samePet": {
+      "average": 0.623018521327087,
+      "minimum": -0.0045454170115058045,
+      "maximum": 1.0000000000000002
+    },
+    "differentPet": {
+      "average": 0.0905259261765786,
+      "minimum": -0.3081416426282674,
+      "maximum": 0.6727218758312414
+    }
+  },
+  "bestThreshold": {
+    "threshold": 0.49999999999999994,
+    "accuracy": 0.9982742742742743,
+    "precision": 0.8603156049094097,
+    "recall": 0.7026252983293556,
+    "f1Score": 0.7735155018392013,
+    "TP": 1472,
+    "TN": 497166,
+    "FP": 239,
+    "FN": 623
+  },
+  "top1Matching": {
+    "gallery": 196,
+    "queries": 804,
+    "correct": 690,
+    "wrong": 114,
+    "accuracy": 0.8582089552238806
+  }
+}
