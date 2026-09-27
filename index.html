@@ -42,8 +42,30 @@
         แจ้งเตือน
     </a>
 
-    <a id="nav-profile" onclick="switchTab('profile')">
+    <a
+        id="nav-profile"
+        onclick="switchTab('profile'); loadMyPosts();"
+    >
         โปรไฟล์
+    </a>
+
+    <a
+        id="nav-admin"
+        style="display:none;"
+        onclick="
+    if (localStorage.getItem('user_role') !== 'admin') {
+        alert('คุณไม่มีสิทธิ์เข้าถึง Admin');
+        return;
+    }
+
+        switchTab('admin');
+        loadAdminDashboard();
+        loadAdminPosts();
+        loadAdminUsers();
+    "
+    >
+        <i class="fa-solid fa-gauge-high"></i>
+        Admin
     </a>
 
     <a id="nav-auth" onclick="switchTab('auth')">
@@ -468,9 +490,223 @@ aria-label="เมนูด่วน"
 
         </div>
 
+        <!-- ==================== MY POSTS ==================== -->
+        <div class="profile-card" style="margin-top: 1.5rem;">
+
+            <div class="profile-section-title">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div class="profile-section-icon">
+                        <i class="fa-solid fa-paw"></i>
+                    </div>
+
+                    <div>
+                        <h3 style="margin:0;">
+                            โพสต์ของฉัน
+                        </h3>
+
+                        <p
+                            class="text-muted-sm"
+                            style="margin:3px 0 0;"
+                        >
+                            จัดการรายการสัตว์เลี้ยงที่คุณประกาศตามหา
+                        </p>
+                    </div>
+                </div>
+
+                <span
+                    id="myPostsCount"
+                    class="text-muted-sm"
+                >
+                    0 โพสต์
+                </span>
+            </div>
+
+            <!-- รายการโพสต์ -->
+            <div
+                id="myPostsContainer"
+                style="
+                    padding:18px;
+                "
+            >
+
+                <!-- Empty State -->
+                <div
+                    id="myPostsEmpty"
+                    style="
+                        text-align:center;
+                        padding:32px 20px;
+                        border:1px dashed var(--border-light);
+                        border-radius:14px;
+                        background:var(--bg-light);
+                    "
+                >
+
+                    <div
+                        style="
+                            width:64px;
+                            height:64px;
+                            margin:0 auto 12px;
+                            border-radius:18px;
+                            display:flex;
+                            align-items:center;
+                            justify-content:center;
+                            background:var(--orange-soft);
+                            color:var(--primary-orange);
+                            font-size:1.5rem;
+                        "
+                    >
+                        <i class="fa-solid fa-paw"></i>
+                    </div>
+
+                    <h4 style="margin-bottom:6px;">
+                        ยังไม่มีโพสต์ของคุณ
+                    </h4>
+
+                    <p
+                        class="text-muted-sm"
+                        style="margin-bottom:16px;"
+                    >
+                        เมื่อคุณประกาศตามหาสัตว์เลี้ยง
+                        รายการโพสต์จะแสดงที่นี่
+                    </p>
+
+                    <button
+                        type="button"
+                        class="btn-primary"
+                        onclick="switchTab('post')"
+                    >
+                        <i class="fa-solid fa-plus"></i>
+                        สร้างโพสต์ตามหา
+                    </button>
+
+                </div>
+
+                <!--
+                    รายการโพสต์จริง
+                    Step ต่อไปเราจะให้ JS โหลดข้อมูลมาใส่ตรงนี้
+                -->
+                <div
+                    id="myPostsList"
+                    style="
+                        display:none;
+                        flex-direction:column;
+                        gap:12px;
+                    "
+                ></div>
+
+            </div>
+
+        </div>
+
     </div>
 
 </div>
+
+<!-- ==================== ADMIN DASHBOARD ==================== -->
+
+<div id="view-admin" class="view-section">
+
+    <div
+        class="main-container"
+        style="max-width:1000px;"
+    >
+
+        <!-- =========================
+            ADMIN DASHBOARD
+        ========================== -->
+        <div class="card-minimal">
+
+            <h2>
+                <i class="fa-solid fa-gauge-high"></i>
+                Admin Dashboard
+            </h2>
+
+            <p class="text-muted-sm">
+                ภาพรวมของระบบ Love Animal
+            </p>
+
+            <div
+                id="adminDashboardContent"
+                style="
+                    margin-top:20px;
+                    text-align:center;
+                "
+            >
+                <p class="text-muted-sm">
+                    กำลังโหลดข้อมูล...
+                </p>
+            </div>
+
+        </div>
+
+
+        <!-- =========================
+            ADMIN - POSTS
+        ========================== -->
+        <div
+            class="card-minimal"
+            style="margin-top:20px;"
+        >
+
+            <h3 style="margin-bottom:6px;">
+                <i class="fa-solid fa-paw"></i>
+                จัดการโพสต์ทั้งหมด
+            </h3>
+
+            <p class="text-muted-sm">
+                รายการโพสต์จากผู้ใช้งานทั้งหมดในระบบ
+            </p>
+
+            <div
+                id="adminPostsContent"
+                style="
+                    margin-top:16px;
+                    overflow-x:auto;
+                "
+            >
+                <p class="text-muted-sm">
+                    กำลังโหลดโพสต์...
+                </p>
+            </div>
+
+        </div>
+
+
+        <!-- =========================
+            ADMIN - USERS
+        ========================== -->
+        <div
+            class="card-minimal"
+            style="margin-top:20px;"
+        >
+
+            <h3 style="margin-bottom:6px;">
+                <i class="fa-solid fa-users"></i>
+                ผู้ใช้งานทั้งหมด
+            </h3>
+
+            <p class="text-muted-sm">
+                รายชื่อผู้ใช้งานทั้งหมดในระบบ
+            </p>
+
+            <div
+                id="adminUsersContent"
+                style="
+                    margin-top:16px;
+                    overflow-x:auto;
+                "
+            >
+                <p class="text-muted-sm">
+                    กำลังโหลดผู้ใช้งาน...
+                </p>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
 <!-- ==================== 4. หน้าการแชท ==================== -->
 
 <div id="view-chat" class="view-section">
@@ -584,7 +820,7 @@ aria-label="เมนูด่วน"
 
 <div id="view-post" class="view-section">
 
-<div class="main-container">
+    <div class="main-container">
 
     <div
         class="card-minimal"
@@ -714,10 +950,207 @@ aria-label="เมนูด่วน"
         </form>
 
     </div>
+    </div>
 
 </div>
 
-</div>
+
+<!-- ==================== หน้าแก้ไขโพสต์ ==================== -->
+    <div id="view-edit-post" class="view-section">
+
+        <div class="main-container">
+
+            <div
+                class="card-minimal"
+                style="max-width: 600px; margin: 0 auto;"
+            >
+
+                <div style="margin-bottom: 1.5rem;">
+
+                    <h2
+                        style="
+                            font-size: 1.3rem;
+                            margin-bottom: 0.5rem;
+                        "
+                    >
+                        <i class="fa-solid fa-pen"></i>
+                        แก้ไขโพสต์ตามหาสัตว์เลี้ยง
+                    </h2>
+
+                    <p
+                        class="text-muted-sm"
+                    >
+                        แก้ไขข้อมูลโพสต์ของคุณแล้วกดบันทึก
+                    </p>
+
+                </div>
+
+
+                <form
+                    onsubmit="handleEditPostSubmit(event)"
+                >
+
+                    <!-- เก็บ ID ของโพสต์ -->
+                    <input
+                        type="hidden"
+                        id="editPostId"
+                    >
+
+
+                    <!-- ชื่อสัตว์เลี้ยง -->
+                    <div class="form-group">
+
+                        <label>
+                            ชื่อสัตว์เลี้ยง / พันธุ์
+                        </label>
+
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="editPostPetName"
+                            placeholder="เช่น น้องส้ม (แมวไทย)"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- จังหวัด -->
+                    <div class="form-group">
+
+                        <label>
+                            เลือกจังหวัดที่หาย
+                        </label>
+
+                        <select
+                            class="form-control"
+                            id="editPostProvince"
+                            required
+                        ></select>
+
+                    </div>
+
+
+                    <!-- รายละเอียด -->
+                    <div class="form-group">
+
+                        <label>
+                            รายละเอียดสัตว์เลี้ยงที่หาย
+                        </label>
+
+                        <textarea
+                            class="form-control"
+                            id="editPostDescription"
+                            rows="4"
+                            placeholder="ระบุปลอกคอ จุดสังเกต หรือพฤติกรรม..."
+                        ></textarea>
+
+                    </div>
+
+
+                    <!-- รูปเดิม -->
+                    <div class="form-group">
+
+                        <label>
+                            รูปภาพสัตว์เลี้ยง
+                        </label>
+
+                        <div
+                            id="editPostImagePreview"
+                            style="
+                                margin-bottom: 10px;
+                                display: none;
+                            "
+                        ></div>
+
+                        <input
+                            type="file"
+                            class="form-control"
+                            id="editPostImage"
+                            accept="image/*"
+                        >
+
+                        <p
+                            class="text-muted-sm"
+                            style="margin-top: 6px;"
+                        >
+                            สามารถเลือกไฟล์ใหม่ได้
+                        </p>
+
+                    </div>
+
+
+                    <!-- แผนที่ -->
+                    <div class="form-group">
+
+                        <label>
+                            ระบุพิกัดบนแผนที่
+                        </label>
+
+                        <div
+                            id="editPostMap"
+                            style="
+                                height: 180px;
+                                border-radius: 10px;
+                            "
+                        ></div>
+
+                        <input
+                            type="hidden"
+                            id="editPostLat"
+                        >
+
+                        <input
+                            type="hidden"
+                            id="editPostLng"
+                        >
+
+                    </div>
+
+
+                    <!-- ปุ่ม -->
+                    <div
+                        style="
+                            display: flex;
+                            gap: 10px;
+                            margin-top: 1rem;
+                        "
+                    >
+
+                        <button
+                            type="button"
+                            class="btn-secondary-sm"
+                            style="
+                                flex: 1;
+                                padding: 12px;
+                            "
+                            onclick="switchTab('profile'); loadMyPosts();"
+                        >
+                            <i class="fa-solid fa-arrow-left"></i>
+                            ยกเลิก
+                        </button>
+
+
+                        <button
+                            type="submit"
+                            class="btn-primary"
+                            style="
+                                flex: 2;
+                            "
+                        >
+                            <i class="fa-solid fa-floppy-disk"></i>
+                            บันทึกการแก้ไข
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
 
 <!-- ==================== 6. หน้าแจ้งเตือน ==================== -->
 
@@ -1098,6 +1531,1597 @@ aria-label="เมนูด่วน"
 <script src="js/fab.js"></script>
 
 <script src="js/face.js"></script>
+
+<script
+    type="module"
+    src="js/animal-landmark.js">
+</script>
+
+<script>
+// ==========================================================
+// MY POSTS
+// ==========================================================
+
+    async function loadMyPosts() {
+
+        const list = document.getElementById('myPostsList');
+        const empty = document.getElementById('myPostsEmpty');
+        const count = document.getElementById('myPostsCount');
+
+        if (!list || !empty || !count) {
+            console.error('ไม่พบ element ของ My Posts');
+            return;
+        }
+
+        const userId = getCurrentUserId();
+
+        console.log('MY POSTS → User ID:', userId);
+
+        if (!userId) {
+            count.textContent = '0 โพสต์';
+            list.style.display = 'none';
+            empty.style.display = 'block';
+            return;
+        }
+
+        try {
+
+            // แสดงสถานะกำลังโหลด
+            list.style.display = 'none';
+            empty.style.display = 'block';
+            empty.innerHTML = `
+                <div style="text-align:center; padding:32px 20px;">
+                    <i
+                        class="fa-solid fa-spinner fa-spin"
+                        style="
+                            font-size: 1.8rem;
+                            color: var(--primary-orange);
+                            margin-bottom: 10px;
+                        "
+                    ></i>
+
+                    <p class="text-muted-sm">
+                        กำลังโหลดโพสต์ของคุณ...
+                    </p>
+                </div>
+            `;
+
+            const response =
+                await api.get(`/users/${userId}/posts`);
+
+            console.log('MY POSTS API →', response);
+
+            const posts = response.data || [];
+
+            count.textContent = `${posts.length} โพสต์`;
+
+            // ไม่มีโพสต์
+            if (posts.length === 0) {
+
+                empty.style.display = 'block';
+                list.style.display = 'none';
+
+                empty.innerHTML = `
+                    <div
+                        style="
+                            text-align:center;
+                            padding:32px 20px;
+                            border:1px dashed var(--border-light);
+                            border-radius:14px;
+                            background:var(--bg-light);
+                        "
+                    >
+                        <div
+                            style="
+                                width:64px;
+                                height:64px;
+                                margin:0 auto 12px;
+                                border-radius:18px;
+                                display:flex;
+                                align-items:center;
+                                justify-content:center;
+                                background:var(--orange-soft);
+                                color:var(--primary-orange);
+                                font-size:1.5rem;
+                            "
+                        >
+                            <i class="fa-solid fa-paw"></i>
+                        </div>
+
+                        <h4 style="margin-bottom:6px;">
+                            ยังไม่มีโพสต์ของคุณ
+                        </h4>
+
+                        <p
+                            class="text-muted-sm"
+                            style="margin-bottom:16px;"
+                        >
+                            เมื่อคุณประกาศตามหาสัตว์เลี้ยง
+                            รายการโพสต์จะแสดงที่นี่
+                        </p>
+
+                        <button
+                            type="button"
+                            class="btn-primary"
+                            onclick="switchTab('post')"
+                        >
+                            <i class="fa-solid fa-plus"></i>
+                            สร้างโพสต์ตามหา
+                        </button>
+                    </div>
+                `;
+
+                return;
+            }
+
+            // มีโพสต์
+            empty.style.display = 'none';
+            list.style.display = 'flex';
+
+            list.innerHTML = posts.map(post => {
+
+                const imageUrl = post.image
+                    ? `http://localhost:3000${post.image}`
+                    : '';
+
+                const statusText =
+                    post.status === 'lost'
+                        ? 'กำลังตามหา'
+                        : post.status === 'found'
+                            ? 'พบแล้ว'
+                            : post.status;
+
+                const statusColor =
+                    post.status === 'lost'
+                        ? 'var(--primary-orange)'
+                        : '#22c55e';
+
+                return `
+                    <div
+                        class="card-minimal"
+                        style="
+                            display:flex;
+                            gap:16px;
+                            padding:14px;
+                            align-items:center;
+                        "
+                    >
+
+                        ${
+                            imageUrl
+                                ? `
+                                    <img
+                                        src="${imageUrl}"
+                                        alt="${escapeHtml(post.pet_name)}"
+                                        style="
+                                            width:100px;
+                                            height:100px;
+                                            object-fit:cover;
+                                            border-radius:12px;
+                                            flex-shrink:0;
+                                            background:#f3f4f6;
+                                        "
+                                    >
+                                  `
+                                : `
+                                    <div
+                                        style="
+                                            width:100px;
+                                            height:100px;
+                                            border-radius:12px;
+                                            flex-shrink:0;
+                                            display:flex;
+                                            align-items:center;
+                                            justify-content:center;
+                                            background:var(--bg-light);
+                                            color:var(--text-muted);
+                                            font-size:1.8rem;
+                                        "
+                                    >
+                                        <i class="fa-solid fa-paw"></i>
+                                    </div>
+                                  `
+                        }
+
+                        <div style="flex:1; min-width:0;">
+
+                            <div
+                                style="
+                                    display:flex;
+                                    justify-content:space-between;
+                                    gap:10px;
+                                    align-items:flex-start;
+                                "
+                            >
+
+                                <div>
+
+                                    <h4
+                                        style="
+                                            margin:0 0 4px;
+                                            font-size:1.05rem;
+                                        "
+                                    >
+                                        ${escapeHtml(post.pet_name)}
+                                    </h4>
+
+                                    <p
+                                        class="text-muted-sm"
+                                        style="margin:0;"
+                                    >
+                                        ${escapeHtml(post.province || '')}
+                                    </p>
+
+                                </div>
+
+                                <span
+                                    style="
+                                        flex-shrink:0;
+                                        padding:4px 9px;
+                                        border-radius:20px;
+                                        font-size:.75rem;
+                                        color:white;
+                                        background:${statusColor};
+                                    "
+                                >
+                                    ${escapeHtml(statusText)}
+                                </span>
+
+                            </div>
+
+                            <p
+                                style="
+                                    margin:8px 0 0;
+                                    color:var(--text-muted);
+                                    font-size:.85rem;
+                                    display:-webkit-box;
+                                    -webkit-line-clamp:2;
+                                    -webkit-box-orient:vertical;
+                                    overflow:hidden;
+                                "
+                            >
+                                ${escapeHtml(post.description || 'ไม่มีรายละเอียด')}
+                            </p>
+
+                        </div>
+
+                    </div>
+                `;
+
+            }).join('');
+
+            // เพิ่มปุ่มแก้ไขให้แต่ละโพสต์
+            posts.forEach((post, index) => {
+
+                const card = list.children[index];
+
+                if (!card) return;
+
+                const actions = document.createElement('div');
+
+                actions.style.cssText = `
+                    display: flex;
+                    gap: 8px;
+                    margin-top: 10px;
+                    padding-top: 10px;
+                    border-top: 1px solid var(--border-light);
+                `;
+
+                actions.innerHTML = `
+                    <button
+                        type="button"
+                        class="btn-secondary-sm"
+                        style="flex:1;"
+                        onclick="editMyPost(${post.id})"
+                    >
+                        <i class="fa-solid fa-pen"></i>
+                        แก้ไข
+                    </button>
+
+                    <button
+                        type="button"
+                        class="btn-secondary-sm"
+                        style="
+                            flex:1;
+                            color:${post.status === 'lost' ? '#22c55e' : '#ef4444'};
+                            border-color:${post.status === 'lost' ? '#bbf7d0' : '#fecaca'};
+                        "
+                        onclick="updateMyPostStatus(${post.id}, '${post.status}')"
+                    >
+                        <i class="fa-solid fa-check"></i>
+                        ${
+                            post.status === 'lost'
+                                ? 'ตั้งเป็นพบแล้ว'
+                                : 'ตั้งเป็นกำลังตามหา'
+                        }
+                    </button>
+
+                    <button
+                        type="button"
+                        class="btn-secondary-sm"
+                        style="
+                            flex:1;
+                            color:#ef4444;
+                            border-color:#fecaca;
+                        "
+                        onclick="deleteMyPost(${post.id})"
+                    >
+                        <i class="fa-solid fa-trash"></i>
+                        ลบ
+                    </button>
+                `;
+
+                card.appendChild(actions);
+            });
+
+        } catch (err) {
+
+            console.error('โหลดโพสต์ของฉันไม่สำเร็จ:', err);
+
+            count.textContent = '0 โพสต์';
+
+            list.style.display = 'none';
+            empty.style.display = 'block';
+
+            empty.innerHTML = `
+                <div style="text-align:center; padding:32px 20px;">
+
+                    <i
+                        class="fa-solid fa-triangle-exclamation"
+                        style="
+                            font-size:1.8rem;
+                            color:#ef4444;
+                            margin-bottom:10px;
+                        "
+                    ></i>
+
+                    <h4 style="margin-bottom:6px;">
+                        โหลดโพสต์ไม่สำเร็จ
+                    </h4>
+
+                    <p class="text-muted-sm">
+                        ${escapeHtml(err.message)}
+                    </p>
+
+                </div>
+            `;
+        }
+    }
+
+// ==========================================================
+// เปลี่ยนสถานะโพสต์
+// ==========================================================
+async function updateMyPostStatus(postId, currentStatus) {
+
+    const userId = getCurrentUserId();
+
+    if (!userId) {
+        alert('กรุณาเข้าสู่ระบบก่อน');
+        return;
+    }
+
+    const nextStatus =
+        currentStatus === 'lost'
+            ? 'found'
+            : 'lost';
+
+    const nextText =
+        nextStatus === 'found'
+            ? 'พบแล้ว'
+            : 'กำลังตามหา';
+
+    const confirmed = confirm(
+        `ต้องการเปลี่ยนสถานะโพสต์เป็น "${nextText}" ใช่หรือไม่?`
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+
+        await api.patch(
+            `/posts/${postId}/status`,
+            {
+                user_id: userId,
+                status: nextStatus
+            }
+        );
+
+        alert('เปลี่ยนสถานะสำเร็จ ✅');
+
+        await loadMyPosts();
+
+    } catch (err) {
+
+        console.error(
+            'เปลี่ยนสถานะไม่สำเร็จ:',
+            err
+        );
+
+        alert(
+            'เปลี่ยนสถานะไม่สำเร็จ ❌\n' +
+            err.message
+        );
+    }
+}
+
+// ==========================================================
+// ลบโพสต์ของตัวเอง
+// ==========================================================
+async function deleteMyPost(postId) {
+
+    const userId = getCurrentUserId();
+
+    if (!userId) {
+        alert('กรุณาเข้าสู่ระบบก่อน');
+        return;
+    }
+
+    const confirmed = confirm(
+        'คุณต้องการลบโพสต์นี้ใช่หรือไม่?\n\nการลบจะไม่สามารถย้อนกลับได้'
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+
+        await api.delete(`/posts/${postId}`, {
+            user_id: userId
+        });
+
+        alert('ลบโพสต์สำเร็จ ✅');
+
+        await loadMyPosts();
+
+    } catch (err) {
+
+        console.error('ลบโพสต์ไม่สำเร็จ:', err);
+
+        alert(
+            'ลบโพสต์ไม่สำเร็จ ❌\n' +
+            err.message
+        );
+    }
+}
+
+// ==========================================================
+// เปิดหน้าแก้ไขโพสต์
+// ==========================================================
+async function editMyPost(postId) {
+
+    const userId = getCurrentUserId();
+
+    if (!userId) {
+        alert('กรุณาเข้าสู่ระบบก่อน');
+        return;
+    }
+
+    try {
+
+        const response =
+            await api.get(`/users/${userId}/posts`);
+
+        const posts = response.data || [];
+
+        const post = posts.find(
+            p => Number(p.id) === Number(postId)
+        );
+
+        if (!post) {
+
+            alert('ไม่พบโพสต์นี้');
+
+            return;
+        }
+
+
+        // ========================================
+        // ใส่ข้อมูลเดิมลงฟอร์ม
+        // ========================================
+
+        document.getElementById('editPostId').value =
+            post.id;
+
+        document.getElementById('editPostPetName').value =
+            post.pet_name || '';
+
+        document.getElementById('editPostDescription').value =
+            post.description || '';
+
+        document.getElementById('editPostLat').value =
+            post.latitude || '';
+
+        document.getElementById('editPostLng').value =
+            post.longitude || '';
+
+
+        // ========================================
+        // จังหวัด
+        // ========================================
+
+        populateProvinceSelect(
+            'editPostProvince',
+            {
+                includeAllOption: false,
+                group: true
+            }
+        );
+
+        setTimeout(() => {
+
+            document.getElementById(
+                'editPostProvince'
+            ).value = post.province || '';
+
+        }, 100);
+
+
+        // ========================================
+        // แสดงรูปเดิม
+        // ========================================
+
+        const preview =
+            document.getElementById(
+                'editPostImagePreview'
+            );
+
+        if (post.image) {
+
+            preview.style.display = 'block';
+
+            preview.innerHTML = `
+                <img
+                    src="http://localhost:3000${post.image}"
+                    alt="รูปสัตว์เลี้ยง"
+                    style="
+                        width: 100%;
+                        max-height: 240px;
+                        object-fit: cover;
+                        border-radius: 12px;
+                        border: 1px solid var(--border-light);
+                    "
+                >
+            `;
+
+        } else {
+
+            preview.style.display = 'none';
+            preview.innerHTML = '';
+
+        }
+
+        // เปิดหน้าแก้ไขโพสต์โดยตรง
+        document.querySelectorAll('.view-section').forEach(view => {
+            view.classList.remove('active');
+        });
+
+        document
+            .getElementById('view-edit-post')
+            .classList.add('active');
+
+
+        // ========================================
+        // เปิดแผนที่
+        // ========================================
+
+        setTimeout(() => {
+
+            initEditPostMap(
+                Number(post.latitude),
+                Number(post.longitude)
+            );
+
+        }, 250);
+
+
+    } catch (err) {
+
+        console.error(
+            'เปิดหน้าแก้ไขโพสต์ไม่สำเร็จ:',
+            err
+        );
+
+        alert(
+            'ไม่สามารถเปิดหน้าแก้ไขได้: ' +
+            err.message
+        );
+
+    }
+}
+
+// ==========================================================
+// EDIT POST MAP
+// ==========================================================
+
+let editPostMap = null;
+let editPostMapMarker = null;
+
+function initEditPostMap(
+    latitude,
+    longitude
+) {
+
+    const defaultLat =
+        latitude || 13.7563;
+
+    const defaultLng =
+        longitude || 100.5018;
+
+
+    // ถ้ามี map อยู่แล้ว
+    if (editPostMap) {
+
+        editPostMap.invalidateSize();
+
+        editPostMap.setView(
+            [defaultLat, defaultLng],
+            13
+        );
+
+        if (editPostMapMarker) {
+            editPostMap.removeLayer(
+                editPostMapMarker
+            );
+        }
+
+        editPostMapMarker =
+            L.marker([
+                defaultLat,
+                defaultLng
+            ]).addTo(editPostMap);
+
+        return;
+    }
+
+
+    // สร้าง map
+    editPostMap =
+        L.map('editPostMap')
+        .setView(
+            [defaultLat, defaultLng],
+            13
+        );
+
+
+    L.tileLayer(
+        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        {
+            attribution: '© OpenStreetMap'
+        }
+    ).addTo(editPostMap);
+
+
+    // marker เดิม
+    editPostMapMarker =
+        L.marker([
+            defaultLat,
+            defaultLng
+        ]).addTo(editPostMap);
+
+
+    // คลิกเปลี่ยนตำแหน่ง
+    editPostMap.on(
+        'click',
+        (e) => {
+
+            const {
+                lat,
+                lng
+            } = e.latlng;
+
+
+            if (editPostMapMarker) {
+
+                editPostMap.removeLayer(
+                    editPostMapMarker
+                );
+
+            }
+
+
+            editPostMapMarker =
+                L.marker([
+                    lat,
+                    lng
+                ]).addTo(editPostMap);
+
+
+            document.getElementById(
+                'editPostLat'
+            ).value =
+                lat.toFixed(7);
+
+
+            document.getElementById(
+                'editPostLng'
+            ).value =
+                lng.toFixed(7);
+
+        }
+    );
+
+
+    setTimeout(() => {
+
+        editPostMap.invalidateSize();
+
+    }, 200);
+}
+
+// ==========================================================
+// SAVE EDITED POST
+// ==========================================================
+
+async function handleEditPostSubmit(e) {
+
+    e.preventDefault();
+
+    if (!requireLogin()) {
+        return;
+    }
+
+
+    const postId =
+        document.getElementById(
+            'editPostId'
+        ).value;
+
+
+    const userId =
+        getCurrentUserId();
+
+
+    const submitBtn =
+        e.target.querySelector(
+            'button[type="submit"]'
+        );
+
+
+    submitBtn.disabled = true;
+
+    submitBtn.innerHTML = `
+        <i class="fa-solid fa-spinner fa-spin"></i>
+        กำลังบันทึก...
+    `;
+
+
+    try {
+
+        const province =
+            document.getElementById(
+                'editPostProvince'
+            ).value;
+
+
+        const provinceData =
+            findProvinceData(province);
+
+
+        const data = {
+
+            user_id: userId,
+
+            pet_name:
+                document.getElementById(
+                    'editPostPetName'
+                ).value.trim(),
+
+            pet_type: '',
+
+            breed: '',
+
+            province: province,
+
+            description:
+                document.getElementById(
+                    'editPostDescription'
+                ).value.trim(),
+
+            latitude:
+                document.getElementById(
+                    'editPostLat'
+                ).value,
+
+            longitude:
+                document.getElementById(
+                    'editPostLng'
+                ).value
+
+        };
+
+
+        console.log(
+            'EDIT POST DATA →',
+            data
+        );
+
+
+        await api.put(
+            `/posts/${postId}`,
+            data
+        );
+
+
+        alert(
+            'บันทึกการแก้ไขสำเร็จ ✅'
+        );
+
+
+        // กลับหน้า Profile
+        switchTab('profile');
+
+
+        // โหลดโพสต์ใหม่
+        loadMyPosts();
+
+
+    } catch (err) {
+
+        console.error(
+            'บันทึกการแก้ไขไม่สำเร็จ:',
+            err
+        );
+
+
+        alert(
+            'บันทึกการแก้ไขไม่สำเร็จ: ' +
+            err.message
+        );
+
+
+    } finally {
+
+        submitBtn.disabled = false;
+
+        submitBtn.innerHTML = `
+            <i class="fa-solid fa-floppy-disk"></i>
+            บันทึกการแก้ไข
+        `;
+
+    }
+}
+
+// ==========================================================
+// ADMIN DASHBOARD
+// ==========================================================
+async function loadAdminDashboard() {
+
+    const container =
+        document.getElementById('adminDashboardContent');
+
+    if (!container) {
+        return;
+    }
+
+    const userId = getCurrentUserId();
+
+    if (!userId) {
+        container.innerHTML = `
+            <p style="color:#ef4444;">
+                กรุณาเข้าสู่ระบบ
+            </p>
+        `;
+        return;
+    }
+
+    container.innerHTML = `
+        <p class="text-muted-sm">
+            กำลังโหลดข้อมูล...
+        </p>
+    `;
+
+    try {
+
+        const response =
+            await api.get(
+                `/admin/dashboard?user_id=${userId}`
+            );
+
+        const data = response.data;
+
+        container.innerHTML = `
+
+            <div
+                style="
+                    display:grid;
+                    grid-template-columns:
+                        repeat(auto-fit,minmax(180px,1fr));
+                    gap:16px;
+                    margin-top:20px;
+                "
+            >
+
+                <div class="card-minimal">
+                    <i
+                        class="fa-solid fa-users"
+                        style="
+                            font-size:1.8rem;
+                            color:#3b82f6;
+                        "
+                    ></i>
+
+                    <h3 style="margin:10px 0 4px;">
+                        ${data.totalUsers}
+                    </h3>
+
+                    <p class="text-muted-sm">
+                        ผู้ใช้ทั้งหมด
+                    </p>
+                </div>
+
+
+                <div class="card-minimal">
+                    <i
+                        class="fa-solid fa-paw"
+                        style="
+                            font-size:1.8rem;
+                            color:var(--primary-orange);
+                        "
+                    ></i>
+
+                    <h3 style="margin:10px 0 4px;">
+                        ${data.totalPosts}
+                    </h3>
+
+                    <p class="text-muted-sm">
+                        โพสต์ทั้งหมด
+                    </p>
+                </div>
+
+
+                <div class="card-minimal">
+                    <i
+                        class="fa-solid fa-magnifying-glass"
+                        style="
+                            font-size:1.8rem;
+                            color:#ef4444;
+                        "
+                    ></i>
+
+                    <h3 style="margin:10px 0 4px;">
+                        ${data.lostPosts}
+                    </h3>
+
+                    <p class="text-muted-sm">
+                        กำลังตามหา
+                    </p>
+                </div>
+
+
+                <div class="card-minimal">
+                    <i
+                        class="fa-solid fa-circle-check"
+                        style="
+                            font-size:1.8rem;
+                            color:#22c55e;
+                        "
+                    ></i>
+
+                    <h3 style="margin:10px 0 4px;">
+                        ${data.foundPosts}
+                    </h3>
+
+                    <p class="text-muted-sm">
+                        พบแล้ว
+                    </p>
+                </div>
+
+            </div>
+
+        `;
+
+    } catch (err) {
+
+        console.error(
+            'โหลด Admin Dashboard ไม่สำเร็จ:',
+            err
+        );
+
+        container.innerHTML = `
+            <div
+                style="
+                    text-align:center;
+                    padding:30px;
+                    color:#ef4444;
+                "
+            >
+                <i
+                    class="fa-solid fa-triangle-exclamation"
+                    style="font-size:2rem;"
+                ></i>
+
+                <p style="margin-top:10px;">
+                    โหลดข้อมูล Admin ไม่สำเร็จ
+                </p>
+
+                <small>
+                    ${escapeHtml(err.message)}
+                </small>
+            </div>
+        `;
+    }
+}
+
+// ==========================================================
+// ADMIN - POSTS
+// ==========================================================
+async function loadAdminPosts() {
+
+    const container =
+        document.getElementById('adminPostsContent');
+
+    if (!container) {
+        return;
+    }
+
+    const userId = getCurrentUserId();
+
+    if (!userId) {
+        container.innerHTML = `
+            <p style="color:#ef4444;">
+                กรุณาเข้าสู่ระบบ
+            </p>
+        `;
+        return;
+    }
+
+    try {
+
+        const response =
+            await api.get(
+                `/admin/posts?user_id=${userId}`
+            );
+
+        const posts = response.data || [];
+
+        if (posts.length === 0) {
+
+            container.innerHTML = `
+                <p class="text-muted-sm">
+                    ยังไม่มีโพสต์ในระบบ
+                </p>
+            `;
+
+            return;
+        }
+
+        container.innerHTML = `
+
+            <table
+                style="
+                    width:100%;
+                    border-collapse:collapse;
+                    min-width:700px;
+                "
+            >
+
+                <thead>
+                    <tr
+                        style="
+                            border-bottom:2px solid var(--border-light);
+                            text-align:left;
+                        "
+                    >
+                        <th style="padding:10px;">โพสต์</th>
+                        <th style="padding:10px;">เจ้าของ</th>
+                        <th style="padding:10px;">จังหวัด</th>
+                        <th style="padding:10px;">สถานะ</th>
+                        <th style="padding:10px;">วันที่</th>
+                        <th style="padding:10px;">จัดการ</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    ${posts.map(post => {
+
+                        const isFound =
+                            post.status === 'found';
+
+                        const statusText =
+                            isFound
+                                ? 'พบแล้ว'
+                                : 'กำลังตามหา';
+
+                        const statusColor =
+                            isFound
+                                ? '#22c55e'
+                                : '#ef4444';
+
+                        const ownerName =
+                            `${post.first_name || ''} ${post.last_name || ''}`.trim();
+
+                        const dateText =
+                            post.created_at
+                                ? new Date(
+                                    post.created_at
+                                  ).toLocaleDateString(
+                                    'th-TH'
+                                  )
+                                : '-';
+
+                        return `
+                            <tr
+                                style="
+                                    border-bottom:1px solid var(--border-light);
+                                "
+                            >
+
+                                <td style="padding:10px;">
+                                    <strong>
+                                        ${escapeHtml(post.pet_name || '-')}
+                                    </strong>
+                                </td>
+
+                                <td style="padding:10px;">
+                                    ${escapeHtml(ownerName || post.username || '-')}
+                                </td>
+
+                                <td style="padding:10px;">
+                                    ${escapeHtml(post.province || '-')}
+                                </td>
+
+                                <td style="padding:10px;">
+
+                                    <span
+                                        style="
+                                            display:inline-block;
+                                            padding:4px 10px;
+                                            border-radius:20px;
+                                            background:${statusColor};
+                                            color:white;
+                                            font-size:.78rem;
+                                        "
+                                    >
+                                        ${statusText}
+                                    </span>
+
+                                </td>
+
+                                <td style="padding:10px;">
+                                    ${dateText}
+                                </td>
+
+                                <td style="padding:10px;">
+
+                                    <button
+                                        type="button"
+                                        class="btn-secondary-sm"
+                                        style="
+                                            color:#ef4444;
+                                            border-color:#fecaca;
+                                        "
+                                        onclick="deleteAdminPost(${post.id})"
+                                    >
+                                        <i class="fa-solid fa-trash"></i>
+                                        ลบ
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        class="btn-secondary-sm"
+                                        style="
+                                            color:${post.status === 'lost' ? '#22c55e' : '#ef4444'};
+                                            border-color:${post.status === 'lost' ? '#bbf7d0' : '#fecaca'};
+                                            margin-left:6px;
+                                        "
+                                        onclick="toggleAdminPostStatus(${post.id}, '${post.status}')"
+                                    >
+                                        <i class="fa-solid fa-rotate"></i>
+                                        ${
+                                            post.status === 'lost'
+                                                ? 'ตั้งเป็นพบแล้ว'
+                                                : 'ตั้งเป็นกำลังตามหา'
+                                        }
+                                    </button>
+
+                                </td>
+
+                            </tr>
+                        `;
+
+                    }).join('')}
+
+                </tbody>
+
+            </table>
+
+        `;
+
+    } catch (err) {
+
+        console.error(
+            'โหลดโพสต์ Admin ไม่สำเร็จ:',
+            err
+        );
+
+        container.innerHTML = `
+            <p style="color:#ef4444;">
+                โหลดโพสต์ไม่สำเร็จ:
+                ${escapeHtml(err.message)}
+            </p>
+        `;
+    }
+}
+
+// ==========================================================
+// ADMIN - DELETE POST
+// ==========================================================
+async function deleteAdminPost(postId) {
+
+    const userId = getCurrentUserId();
+
+    if (!userId) {
+        alert('กรุณาเข้าสู่ระบบก่อน');
+        return;
+    }
+
+    const confirmed = confirm(
+        'ต้องการลบโพสต์นี้ใช่หรือไม่?\n\nการลบจะไม่สามารถย้อนกลับได้'
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+
+        await api.delete(
+            `/admin/posts/${postId}`,
+            {
+                user_id: userId
+            }
+        );
+
+        alert('Admin ลบโพสต์สำเร็จ ✅');
+
+        await loadAdminDashboard();
+        await loadAdminPosts();
+
+        // อัปเดตหมุดบนแผนที่ด้วย
+        if (typeof loadMapMarkers === 'function') {
+            await loadMapMarkers();
+        }
+
+    } catch (err) {
+
+        console.error(
+            'Admin ลบโพสต์ไม่สำเร็จ:',
+            err
+        );
+
+        alert(
+            'ลบโพสต์ไม่สำเร็จ ❌\n' +
+            err.message
+        );
+    }
+}
+
+// ==========================================================
+// ADMIN - TOGGLE POST STATUS
+// ==========================================================
+async function toggleAdminPostStatus(postId, currentStatus) {
+
+    const adminId = getCurrentUserId();
+
+    if (!adminId) {
+        alert('กรุณาเข้าสู่ระบบก่อน');
+        return;
+    }
+
+    const nextStatus =
+        currentStatus === 'lost'
+            ? 'found'
+            : 'lost';
+
+    const statusText =
+        nextStatus === 'found'
+            ? 'พบแล้ว'
+            : 'กำลังตามหา';
+
+    const confirmed = confirm(
+        `ต้องการเปลี่ยนสถานะโพสต์เป็น "${statusText}" ใช่หรือไม่?`
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+
+        await api.patch(
+            `/admin/posts/${postId}/status`,
+            {
+                admin_id: Number(adminId),
+                status: nextStatus
+            }
+        );
+
+        alert('เปลี่ยนสถานะโพสต์สำเร็จ ✅');
+
+        await loadAdminPosts();
+        await loadAdminDashboard();
+
+        if (typeof loadMapMarkers === 'function') {
+            await loadMapMarkers();
+        }
+
+    } catch (err) {
+
+        console.error(
+            'Admin เปลี่ยนสถานะไม่สำเร็จ:',
+            err
+        );
+
+        alert(
+            'เปลี่ยนสถานะไม่สำเร็จ ❌\n' +
+            err.message
+        );
+    }
+}
+
+// ==========================================================
+// ADMIN - USERS
+// ==========================================================
+async function loadAdminUsers() {
+
+    const container =
+        document.getElementById('adminUsersContent');
+
+    if (!container) {
+        return;
+    }
+
+    const userId = getCurrentUserId();
+
+    if (!userId) {
+        container.innerHTML = `
+            <p style="color:#ef4444;">
+                กรุณาเข้าสู่ระบบ
+            </p>
+        `;
+        return;
+    }
+
+    try {
+
+        const response =
+            await api.get(
+                `/admin/users?user_id=${userId}`
+            );
+
+        const users = response.data || [];
+
+        if (users.length === 0) {
+
+            container.innerHTML = `
+                <p class="text-muted-sm">
+                    ยังไม่มีผู้ใช้งาน
+                </p>
+            `;
+
+            return;
+        }
+
+        container.innerHTML = `
+            <table
+                style="
+                    width:100%;
+                    border-collapse:collapse;
+                    min-width:850px;
+                "
+            >
+
+                <thead>
+                    <tr
+                        style="
+                            border-bottom:2px solid var(--border-light);
+                            text-align:left;
+                        "
+                    >
+                        <th style="padding:10px;">ผู้ใช้</th>
+                        <th style="padding:10px;">Username</th>
+                        <th style="padding:10px;">Email</th>
+                        <th style="padding:10px;">จังหวัด</th>
+                        <th style="padding:10px;">สิทธิ์</th>
+                        <th style="padding:10px;">วันที่สมัคร</th>
+                        <th style="padding:10px;">จัดการ</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    ${users.map(user => {
+
+                        const fullName =
+                            `${user.first_name || ''} ${user.last_name || ''}`.trim();
+
+                        const isAdmin =
+                            user.role === 'admin';
+
+                        const roleText =
+                            isAdmin
+                                ? 'Admin'
+                                : 'User';
+
+                        const roleColor =
+                            isAdmin
+                                ? '#8b5cf6'
+                                : '#64748b';
+
+                        const dateText =
+                            user.created_at
+                                ? new Date(
+                                    user.created_at
+                                  ).toLocaleDateString(
+                                    'th-TH'
+                                  )
+                                : '-';
+
+                        return `
+                            <tr
+                                style="
+                                    border-bottom:1px solid var(--border-light);
+                                "
+                            >
+
+                                <td style="padding:10px;">
+                                    ${escapeHtml(fullName || '-')}
+                                </td>
+
+                                <td style="padding:10px;">
+                                    ${escapeHtml(user.username || '-')}
+                                </td>
+
+                                <td style="padding:10px;">
+                                    ${escapeHtml(user.email || '-')}
+                                </td>
+
+                                <td style="padding:10px;">
+                                    ${escapeHtml(user.province || '-')}
+                                </td>
+
+                                <td style="padding:10px;">
+
+                                    <span
+                                        style="
+                                            display:inline-block;
+                                            padding:4px 10px;
+                                            border-radius:20px;
+                                            background:${roleColor};
+                                            color:white;
+                                            font-size:.78rem;
+                                        "
+                                    >
+                                        ${roleText}
+                                    </span>
+
+                                </td>
+
+                                <td style="padding:10px;">
+                                    ${dateText}
+                                </td>
+
+                                <td style="padding:10px;">
+
+                                    ${
+                                        Number(user.id) === Number(getCurrentUserId())
+                                            ? `
+                                                <span
+                                                    style="
+                                                        font-size:.78rem;
+                                                        color:#777;
+                                                    "
+                                                >
+                                                    บัญชีปัจจุบัน
+                                                </span>
+                                            `
+                                            : `
+                                                <button
+                                                    type="button"
+                                                    class="btn-secondary-sm"
+                                                    onclick="toggleAdminRole(${user.id}, '${user.role}')"
+                                                >
+                                                    <i class="fa-solid fa-user-shield"></i>
+                                                    ${
+                                                        user.role === 'admin'
+                                                            ? 'เปลี่ยนเป็น User'
+                                                            : 'เปลี่ยนเป็น Admin'
+                                                    }
+                                                </button>
+                                            `
+                                    }
+
+</td>
+
+                            </tr>
+                        `;
+
+                    }).join('')}
+
+                </tbody>
+
+            </table>
+        `;
+
+    } catch (err) {
+
+        console.error(
+            'โหลดรายชื่อ User ไม่สำเร็จ:',
+            err
+        );
+
+        container.innerHTML = `
+            <p style="color:#ef4444;">
+                โหลดรายชื่อผู้ใช้ไม่สำเร็จ:
+                ${escapeHtml(err.message)}
+            </p>
+        `;
+    }
+}
+
+// ==========================================================
+// ADMIN - TOGGLE USER ROLE
+// ==========================================================
+async function toggleAdminRole(userId, currentRole) {
+
+    const adminId = getCurrentUserId();
+
+    if (!adminId) {
+        alert('กรุณาเข้าสู่ระบบก่อน');
+        return;
+    }
+
+    const nextRole =
+        currentRole === 'admin'
+            ? 'user'
+            : 'admin';
+
+    const roleText =
+        nextRole === 'admin'
+            ? 'Admin'
+            : 'User';
+
+    const confirmed = confirm(
+        `ต้องการเปลี่ยนสิทธิ์ผู้ใช้เป็น "${roleText}" ใช่หรือไม่?`
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+
+        await api.patch(
+            `/admin/users/${userId}/role`,
+            {
+                admin_id: Number(adminId),
+                role: nextRole
+            }
+        );
+
+        alert('เปลี่ยนสิทธิ์สำเร็จ ✅');
+
+        await loadAdminUsers();
+
+    } catch (err) {
+
+        console.error(
+            'เปลี่ยนสิทธิ์ไม่สำเร็จ:',
+            err
+        );
+
+        alert(
+            'เปลี่ยนสิทธิ์ไม่สำเร็จ ❌\n' +
+            err.message
+        );
+    }
+}
+
+</script>
 
 </body>
 </html>

@@ -3358,3 +3358,426 @@ select.form-control:hover {
     animation: none !important;
     opacity: 0 !important;
 }
+
+
+/* ==========================================================
+   MODERN UI SAFE LAYER
+   ปรับเฉพาะภาพลักษณ์ ไม่แตะ layout หลักของระบบ
+   - ไม่เปลี่ยน display / position / width / height / overflow
+   - ไม่ใช้ !important
+   - ไม่แตะโครงสร้างของหน้าและ JS
+   ========================================================== */
+
+:root {
+    --modern-bg: #F7F8FA;
+    --modern-surface: rgba(255,255,255,.96);
+    --modern-surface-soft: #FBFCFE;
+    --modern-border: #E7E9EE;
+    --modern-text: #202733;
+    --modern-muted: #78808D;
+    --modern-orange: #FF9F1C;
+    --modern-orange-deep: #E98200;
+    --modern-orange-soft: #FFF5E7;
+    --modern-shadow-xs: 0 2px 8px rgba(31,41,55,.045);
+    --modern-shadow-sm: 0 8px 24px rgba(31,41,55,.07);
+    --modern-shadow-md: 0 14px 34px rgba(31,41,55,.10);
+}
+
+html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+body {
+    color: var(--modern-text);
+    background:
+        radial-gradient(circle at 0% 0%, rgba(255,159,28,.055), transparent 28%),
+        radial-gradient(circle at 100% 100%, rgba(255,181,46,.045), transparent 26%),
+        var(--modern-bg);
+}
+
+/* ---------- Global typography ---------- */
+h1, h2, h3, h4 {
+    color: var(--modern-text);
+    letter-spacing: -.01em;
+}
+
+p,
+.text-muted-sm,
+.text-muted-xs {
+    color: var(--modern-muted);
+}
+
+/* ---------- Navbar ---------- */
+header {
+    background: rgba(255,255,255,.90);
+    border-bottom-color: rgba(231,233,238,.85);
+    box-shadow: 0 5px 20px rgba(31,41,55,.045);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+}
+
+.logo {
+    background: linear-gradient(135deg, #FF9F1C, #FFB83D);
+    border-radius: 14px;
+    box-shadow: 0 8px 18px rgba(255,159,28,.18);
+    transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+}
+
+.logo:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 11px 24px rgba(255,159,28,.23);
+    filter: saturate(1.03);
+}
+
+.nav-links a {
+    color: #626B78;
+    border-radius: 999px;
+    transition: color .18s ease, background .18s ease, transform .18s ease;
+}
+
+.nav-links a:hover {
+    color: var(--modern-orange-deep);
+    background: var(--modern-orange-soft);
+    transform: translateY(-1px);
+}
+
+.nav-links a.active {
+    color: #C66C00;
+    background: var(--modern-orange-soft);
+    font-weight: 600;
+}
+
+/* Admin link gets a slightly clearer treatment without changing layout */
+#nav-admin {
+    border: 1px solid transparent;
+}
+
+#nav-admin.active,
+#nav-admin:hover {
+    border-color: #FFD7A0;
+}
+
+/* ---------- Cards ---------- */
+.card-minimal {
+    border-color: var(--modern-border);
+    background: var(--modern-surface);
+    box-shadow: var(--modern-shadow-sm);
+    transition: transform .20s ease, box-shadow .20s ease, border-color .20s ease;
+}
+
+.card-minimal:hover {
+    border-color: #E3E6EB;
+    box-shadow: var(--modern-shadow-md);
+}
+
+/* Keep cards containing forms/tables visually steady */
+.card-minimal table,
+.card-minimal form,
+.card-minimal .form-group {
+    position: relative;
+}
+
+/* ---------- Inputs ---------- */
+.form-control,
+select.form-control,
+textarea.form-control,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="tel"],
+input[type="number"],
+input[type="file"] {
+    color: var(--modern-text);
+    background: var(--modern-surface-soft);
+    border-color: #E0E4EA;
+    border-radius: 12px;
+    transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+.form-control:hover,
+select.form-control:hover,
+textarea.form-control:hover,
+input[type="text"]:hover,
+input[type="email"]:hover,
+input[type="password"]:hover,
+input[type="tel"]:hover,
+input[type="number"]:hover,
+input[type="file"]:hover {
+    border-color: #D1D6DE;
+    background: #FFFFFF;
+}
+
+.form-control:focus,
+select.form-control:focus,
+textarea.form-control:focus,
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="tel"]:focus,
+input[type="number"]:focus,
+input[type="file"]:focus {
+    border-color: var(--modern-orange);
+    background: #FFFFFF;
+    box-shadow: 0 0 0 4px rgba(255,159,28,.10);
+}
+
+.form-group label {
+    color: #505865;
+}
+
+/* ---------- Buttons ---------- */
+.btn-primary,
+.pet-scan-start-btn {
+    background: linear-gradient(135deg, #FF9F1C, #FFB83D);
+    box-shadow: 0 8px 18px rgba(255,159,28,.18);
+    transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+}
+
+.btn-primary:hover,
+.pet-scan-start-btn:hover {
+    background: linear-gradient(135deg, #F79510, #FFAE25);
+    box-shadow: 0 11px 23px rgba(255,159,28,.23);
+    filter: saturate(1.02);
+}
+
+.btn-primary:active,
+.pet-scan-start-btn:active {
+    transform: translateY(1px);
+}
+
+.btn-secondary-sm,
+.pet-camera-switch-btn {
+    color: #4E5662;
+    background: #F8F9FB;
+    border-color: #E1E5EA;
+}
+
+.btn-secondary-sm:hover,
+.pet-camera-switch-btn:hover {
+    background: var(--modern-orange-soft);
+    color: var(--modern-orange-deep);
+    border-color: #FFD7A0;
+}
+
+/* ---------- Post cards ---------- */
+.post-item-card {
+    border-color: var(--modern-border);
+    background: rgba(255,255,255,.98);
+    box-shadow: var(--modern-shadow-sm);
+    transition: transform .20s ease, box-shadow .20s ease, border-color .20s ease;
+}
+
+.post-item-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--modern-shadow-md);
+    border-color: #E1E5EA;
+}
+
+.post-card-image {
+    transition: transform .32s ease, filter .32s ease;
+}
+
+.post-item-card:hover .post-card-image {
+    filter: saturate(1.04) contrast(1.02);
+    transform: scale(1.015);
+}
+
+.badge-province {
+    background: #F7F8FA;
+    border-color: #E9ECF0;
+    color: #6F7783;
+}
+
+/* ---------- Notifications ---------- */
+.noti-card {
+    background: rgba(255,255,255,.97);
+    border-color: var(--modern-border);
+    box-shadow: var(--modern-shadow-xs);
+}
+
+.noti-card:hover {
+    box-shadow: var(--modern-shadow-sm);
+}
+
+.noti-unread {
+    background: linear-gradient(90deg, #FFF9F1, #FFFFFF 42%);
+    border-left-color: var(--modern-orange);
+}
+
+.noti-icon {
+    color: var(--modern-orange-deep);
+    background: var(--modern-orange-soft);
+}
+
+/* ---------- Chat ---------- */
+.chat-sidebar {
+    background: #FBFCFD;
+}
+
+.conversation-item {
+    background: #F5F6F8;
+    border-color: transparent;
+}
+
+.conversation-item:hover {
+    background: #FFF7EC;
+    border-color: #FFDDB0;
+}
+
+.chat-bubble {
+    box-shadow: 0 3px 10px rgba(31,41,55,.045);
+}
+
+.chat-bubble-theirs {
+    background: #F2F4F6;
+}
+
+.chat-bubble-mine {
+    background: linear-gradient(135deg, #FF9F1C, #FFB83D);
+}
+
+/* ---------- Pet Scan ---------- */
+.pet-scan-card {
+    background: rgba(255,255,255,.97);
+    border-color: var(--modern-border);
+    box-shadow: var(--modern-shadow-md);
+}
+
+.pet-scan-header-icon {
+    background: linear-gradient(135deg, #FFF0D7, #FFF9EE);
+    box-shadow: inset 0 0 0 1px #FFE0B0, 0 6px 16px rgba(255,159,28,.08);
+}
+
+.pet-camera-wrapper {
+    box-shadow: 0 14px 34px rgba(31,41,55,.14);
+}
+
+.pet-scan-guide {
+    background: #FCFCFD;
+    border-color: #ECEEF2;
+}
+
+.pet-scan-result {
+    background: #FFFFFF;
+    border-color: #E7E9EE;
+    box-shadow: var(--modern-shadow-sm);
+}
+
+/* ---------- Profile ---------- */
+.profile-header-card {
+    border-color: #FFD9A3;
+    background: linear-gradient(135deg, #FFFFFF 0%, #FFF8EE 100%);
+    box-shadow: var(--modern-shadow-sm);
+}
+
+.profile-avatar {
+    background: linear-gradient(135deg, #FF9F1C, #FFB83D);
+    box-shadow: 0 10px 22px rgba(255,159,28,.21);
+}
+
+.profile-info-icon,
+.profile-section-icon {
+    background: #FFF7EA;
+    color: var(--modern-orange-deep);
+    border-color: #F0E7DA;
+}
+
+.profile-info-row:hover {
+    background: linear-gradient(90deg, #FFFDF9, transparent);
+}
+
+/* ---------- Admin ---------- */
+#view-admin .card-minimal {
+    background: rgba(255,255,255,.98);
+}
+
+#view-admin h2,
+#view-admin h3 {
+    color: var(--modern-text);
+}
+
+#view-admin .text-muted-sm,
+#view-admin .text-muted-xs {
+    color: var(--modern-muted);
+}
+
+#view-admin table {
+    border-color: var(--modern-border);
+}
+
+#view-admin th {
+    color: #5B6470;
+    font-weight: 600;
+}
+
+#view-admin td {
+    border-top-color: #ECEEF2;
+}
+
+/* ---------- Map ---------- */
+.filter-sidebar {
+    background: rgba(255,255,255,.96);
+    box-shadow: 8px 0 24px rgba(31,41,55,.035);
+}
+
+.leaflet-popup-content-wrapper {
+    border-radius: 16px;
+    box-shadow: 0 14px 32px rgba(31,41,55,.16);
+}
+
+/* ---------- FAB ---------- */
+.fab-button {
+    background: linear-gradient(135deg, #FF9F1C, #FFB83D);
+    box-shadow: 0 10px 26px rgba(255,159,28,.30);
+    transition: transform .18s ease, box-shadow .18s ease;
+}
+
+.fab-button:hover {
+    box-shadow: 0 13px 30px rgba(255,159,28,.36);
+}
+
+.fab-menu button {
+    background: rgba(255,255,255,.98);
+    border-color: #E5E8ED;
+    box-shadow: 0 8px 20px rgba(31,41,55,.11);
+}
+
+.fab-menu button:hover {
+    background: #FFF9F1;
+    border-color: #FFD8A4;
+}
+
+/* ---------- Small interaction polish ---------- */
+a,
+button,
+select,
+input,
+textarea {
+    -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+    outline: 3px solid rgba(255,159,28,.22);
+    outline-offset: 2px;
+}
+
+/* ---------- Reduce motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+    .logo,
+    .nav-links a,
+    .card-minimal,
+    .post-item-card,
+    .post-card-image,
+    .btn-primary,
+    .pet-scan-start-btn,
+    .noti-card,
+    .conversation-item,
+    .fab-button {
+        transition: none;
+    }
+}

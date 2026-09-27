@@ -12,13 +12,28 @@ function switchAuthTab(tab) {
 }
 
 function saveSession(user) {
-  localStorage.setItem('current_user_id', user.id);
 
-  if (user.token) {
-    localStorage.setItem('auth_token', user.token);
-  }
+    localStorage.setItem(
+        'current_user_id',
+        user.id
+    );
 
-  updateAuthNavUI();
+    if (user.token) {
+        localStorage.setItem(
+            'auth_token',
+            user.token
+        );
+    }
+
+    if (user.role) {
+        localStorage.setItem(
+            'user_role',
+            user.role
+        );
+    }
+
+    updateAuthNavUI();
+    updateAdminNavUI();
 }
 
 function logout() {
@@ -129,4 +144,25 @@ async function handleRegister(e) {
     btn.disabled = false;
 
   }
+}
+
+// ==========================================================
+// แสดงเมนู Admin เฉพาะผู้ใช้ที่เป็น admin
+// ==========================================================
+function updateAdminNavUI() {
+
+    const adminNav =
+        document.getElementById('nav-admin');
+
+    if (!adminNav) {
+        return;
+    }
+
+    const role =
+        localStorage.getItem('user_role');
+
+    adminNav.style.display =
+        role === 'admin'
+            ? 'inline-block'
+            : 'none';
 }

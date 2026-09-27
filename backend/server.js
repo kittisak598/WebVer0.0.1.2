@@ -169,7 +169,8 @@ app.post("/auth/login",(req,res)=>{
                     id:rows[0].id,
                     token:"demo-token",
                     first_name:rows[0].first_name,
-                    last_name:rows[0].last_name
+                    last_name:rows[0].last_name,
+                    role:rows[0].role
                 }
 
             });
@@ -180,9 +181,204 @@ app.post("/auth/login",(req,res)=>{
 });
 
 // ===========================
+// CHECK ADMIN
+// ===========================
+async function requireAdmin(userId) {
+
+    return new Promise((resolve, reject) => {
+
+        db.query(
+            "SELECT role FROM users WHERE id = ?",
+            [userId],
+            (err, rows) => {
+
+                if (err) {
+                    return reject(err);
+                }
+
+                if (rows.length === 0) {
+                    return resolve(false);
+                }
+
+                resolve(rows[0].role === "admin");
+
+            }
+        );
+
+    });
+
+}
+
+// ===========================
+// ADMIN DASHBOARD
+// ===========================
+app.get("/admin/dashboard", async (req, res) => {
+
+    const userId = req.query.user_id;
+
+    if (!userId) {
+        return res.status(400).json({
+            success: false,
+            message: "ไม่พบ user_id"
+        });
+    }
+
+    try {
+
+        const isAdmin = await requireAdmin(userId);
+
+        if (!isAdmin) {
+            return res.status(403).json({
+                success: false,
+                message: "ไม่มีสิทธิ์เข้าถึง Admin"
+            });
+        }
+
+        db.query(
+            `
+            SELECT
+
+                (SELECT COUNT(*) FROM users) AS totalUsers,
+
+                (SELECT COUNT(*) FROM posts) AS totalPosts,
+
+                (SELECT COUNT(*)
+                 FROM posts
+                 WHERE status = 'lost') AS lostPosts,
+
+                (SELECT COUNT(*)
+                 FROM posts
+                 WHERE status = 'found') AS foundPosts
+
+            `,
+            (err, rows) => {
+
+                if (err) {
+
+                    console.error(
+                        "ADMIN DASHBOARD ERROR:",
+                        err
+                    );
+
+                    return res.status(500).json({
+                        success: false,
+                        message: err.sqlMessage || err.message
+                    });
+
+                }
+
+                res.json({
+                    success: true,
+                    data: rows[0]
+                });
+
+            }
+        );
+
+    } catch (error) {
+
+        console.error(
+            "ADMIN AUTH ERROR:",
+            error
+        );
+
+        res.status(500).json({
+            success: false,
+            message: "ตรวจสอบสิทธิ์ Admin ไม่สำเร็จ"
+        });
+
+    }
+
+});
+
+// ===========================
+// ADMIN - GET ALL POSTS
+// ===========================
+app.get("/admin/posts", async (req, res) => {
+
+    const userId = req.query.user_id;
+
+    if (!userId) {
+        return res.status(400).json({
+            success: false,
+            message: "ไม่พบ user_id"
+        });
+    }
+
+    try {
+
+        const isAdmin = await requireAdmin(userId);
+
+        if (!isAdmin) {
+            return res.status(403).json({
+                success: false,
+                message: "ไม่มีสิทธิ์เข้าถึง Admin"
+            });
+        }
+
+        db.query(
+            `
+            SELECT
+                posts.id,
+                posts.user_id,
+                posts.pet_name,
+                posts.pet_type,
+                posts.breed,
+                posts.province,
+                posts.description,
+                posts.image,
+                posts.latitude,
+                posts.longitude,
+                posts.status,
+                posts.created_at,
+                users.first_name,
+                users.last_name,
+                users.username
+            FROM posts
+            LEFT JOIN users
+                ON posts.user_id = users.id
+            ORDER BY posts.created_at DESC
+            `,
+            (err, rows) => {
+
+                if (err) {
+                    console.error(
+                        "ADMIN GET POSTS ERROR:",
+                        err
+                    );
+
+                    return res.status(500).json({
+                        success: false,
+                        message: err.sqlMessage || err.message
+                    });
+                }
+
+                res.json({
+                    success: true,
+                    data: rows
+                });
+
+            }
+        );
+
+    } catch (error) {
+
+        console.error(
+            "ADMIN AUTH ERROR:",
+            error
+        );
+
+        res.status(500).json({
+            success: false,
+            message: "ตรวจสอบสิทธิ์ Admin ไม่สำเร็จ"
+        });
+    }
+
+});
+
+// ===========================
 // GET PROFILE
 // ===========================
-
 app.get("/users/:id",(req,res)=>{
 
     db.query(
@@ -319,6 +515,382 @@ app.get("/posts", (req, res) => {
         });
 
     });
+
+});
+
+// ===========================
+// ADMIN - DELETE POST
+// ===========================
+app.delete("/admin/posts/:id", async (req, res) => {
+
+    const userId = req.body.user_id;
+
+    if (!userId) {
+        return res.status(400).json({
+            success: false,
+            message: "ไม่พบ user_id"
+        });
+    }
+
+    try {
+
+        const isAdmin = await requireAdmin(userId);
+
+        if (!isAdmin) {
+            return res.status(403).json({
+                success: false,
+                message: "ไม่มีสิทธิ์เข้าถึง Admin"
+            });
+        }
+
+        db.query(
+            "DELETE FROM posts WHERE id = ?",
+            [req.params.id],
+            (err, result) => {
+
+                if (err) {
+
+                    console.error(
+                        "ADMIN DELETE POST ERROR:",
+                        err
+                    );
+
+                    return res.status(500).json({
+                        success: false,
+                        message: err.sqlMessage || err.message
+                    });
+                }
+
+                if (result.affectedRows === 0) {
+
+                    return res.status(404).json({
+                        success: false,
+                        message: "ไม่พบโพสต์นี้"
+                    });
+                }
+
+                res.json({
+                    success: true,
+                    message: "Admin ลบโพสต์สำเร็จ"
+                });
+
+            }
+        );
+
+    } catch (error) {
+
+        console.error(
+            "ADMIN AUTH ERROR:",
+            error
+        );
+
+        res.status(500).json({
+            success: false,
+            message: "ตรวจสอบสิทธิ์ Admin ไม่สำเร็จ"
+        });
+    }
+
+});
+
+// ===========================
+// ADMIN - UPDATE POST STATUS
+// ===========================
+app.patch("/admin/posts/:id/status", async (req, res) => {
+
+    const adminId = req.body.admin_id;
+    const status = req.body.status;
+
+    if (!adminId || !status) {
+        return res.status(400).json({
+            success: false,
+            message: "ข้อมูลไม่ครบ"
+        });
+    }
+
+    if (!["lost", "found"].includes(status)) {
+        return res.status(400).json({
+            success: false,
+            message: "สถานะไม่ถูกต้อง"
+        });
+    }
+
+    try {
+
+        const isAdmin = await requireAdmin(adminId);
+
+        if (!isAdmin) {
+            return res.status(403).json({
+                success: false,
+                message: "ไม่มีสิทธิ์จัดการโพสต์"
+            });
+        }
+
+        db.query(
+            `
+            UPDATE posts
+            SET status = ?
+            WHERE id = ?
+            `,
+            [
+                status,
+                req.params.id
+            ],
+            (err, result) => {
+
+                if (err) {
+
+                    console.error(
+                        "ADMIN UPDATE STATUS ERROR:",
+                        err
+                    );
+
+                    return res.status(500).json({
+                        success: false,
+                        message: err.sqlMessage || err.message
+                    });
+                }
+
+                if (result.affectedRows === 0) {
+
+                    return res.status(404).json({
+                        success: false,
+                        message: "ไม่พบโพสต์"
+                    });
+                }
+
+                res.json({
+                    success: true,
+                    message: "Admin เปลี่ยนสถานะโพสต์สำเร็จ"
+                });
+
+            }
+        );
+
+    } catch (error) {
+
+        console.error(
+            "ADMIN AUTH ERROR:",
+            error
+        );
+
+        res.status(500).json({
+            success: false,
+            message: "ตรวจสอบสิทธิ์ Admin ไม่สำเร็จ"
+        });
+    }
+
+});
+
+// ===========================
+// ADMIN - GET ALL USERS
+// ===========================
+app.get("/admin/users", async (req, res) => {
+
+    const userId = req.query.user_id;
+
+    if (!userId) {
+        return res.status(400).json({
+            success: false,
+            message: "ไม่พบ user_id"
+        });
+    }
+
+    try {
+
+        const isAdmin = await requireAdmin(userId);
+
+        if (!isAdmin) {
+            return res.status(403).json({
+                success: false,
+                message: "ไม่มีสิทธิ์เข้าถึง Admin"
+            });
+        }
+
+        db.query(
+            `
+            SELECT
+                id,
+                first_name,
+                last_name,
+                username,
+                email,
+                phone,
+                province,
+                role,
+                created_at
+            FROM users
+            ORDER BY created_at DESC, id DESC
+            `,
+            (err, rows) => {
+
+                if (err) {
+
+                    console.error(
+                        "ADMIN GET USERS ERROR:",
+                        err
+                    );
+
+                    return res.status(500).json({
+                        success: false,
+                        message: err.sqlMessage || err.message
+                    });
+                }
+
+                res.json({
+                    success: true,
+                    data: rows
+                });
+
+            }
+        );
+
+    } catch (error) {
+
+        console.error(
+            "ADMIN AUTH ERROR:",
+            error
+        );
+
+        res.status(500).json({
+            success: false,
+            message: "ตรวจสอบสิทธิ์ Admin ไม่สำเร็จ"
+        });
+    }
+
+});
+
+// ===========================
+// ADMIN - UPDATE USER ROLE
+// ===========================
+app.patch("/admin/users/:id/role", async (req, res) => {
+
+    const adminId = req.body.admin_id;
+    const role = req.body.role;
+
+    if (!adminId || !role) {
+        return res.status(400).json({
+            success: false,
+            message: "ข้อมูลไม่ครบ"
+        });
+    }
+
+    if (!["user", "admin"].includes(role)) {
+        return res.status(400).json({
+            success: false,
+            message: "Role ไม่ถูกต้อง"
+        });
+    }
+
+    try {
+
+        const isAdmin = await requireAdmin(adminId);
+
+        if (!isAdmin) {
+            return res.status(403).json({
+                success: false,
+                message: "ไม่มีสิทธิ์จัดการผู้ใช้"
+            });
+        }
+
+        db.query(
+            `
+            UPDATE users
+            SET role = ?
+            WHERE id = ?
+            `,
+            [
+                role,
+                req.params.id
+            ],
+            (err, result) => {
+
+                if (err) {
+
+                    console.error(
+                        "ADMIN UPDATE ROLE ERROR:",
+                        err
+                    );
+
+                    return res.status(500).json({
+                        success: false,
+                        message: err.sqlMessage || err.message
+                    });
+                }
+
+                if (result.affectedRows === 0) {
+
+                    return res.status(404).json({
+                        success: false,
+                        message: "ไม่พบผู้ใช้งาน"
+                    });
+                }
+
+                res.json({
+                    success: true,
+                    message: "เปลี่ยนสิทธิ์ผู้ใช้สำเร็จ"
+                });
+
+            }
+        );
+
+    } catch (error) {
+
+        console.error(
+            "ADMIN AUTH ERROR:",
+            error
+        );
+
+        res.status(500).json({
+            success: false,
+            message: "ตรวจสอบสิทธิ์ Admin ไม่สำเร็จ"
+        });
+    }
+
+});
+
+// ===========================
+// GET MY POSTS
+// ===========================
+app.get("/users/:userId/posts", (req, res) => {
+
+    const userId = req.params.userId;
+
+    db.query(
+        `
+        SELECT
+            id,
+            user_id,
+            pet_name,
+            pet_type,
+            breed,
+            province,
+            description,
+            image,
+            latitude,
+            longitude,
+            status,
+            created_at
+        FROM posts
+        WHERE user_id = ?
+        ORDER BY created_at DESC, id DESC
+        `,
+        [userId],
+        (err, rows) => {
+
+            if (err) {
+                return res.status(500).json({
+                    success: false,
+                    message: err.sqlMessage
+                });
+            }
+
+            res.json({
+                success: true,
+                data: rows
+            });
+
+        }
+    );
 
 });
 
@@ -487,6 +1059,12 @@ app.post("/pet-scan", async (req, res) => {
             });
         }
 
+        // ==========================================
+        // ค่าเกณฑ์จาก Automated Test
+        // ==========================================
+
+        const MATCH_THRESHOLD = 0.50;
+
         const imagePath = path.join(
             __dirname,
             "..",
@@ -509,8 +1087,10 @@ app.post("/pet-scan", async (req, res) => {
             scanEmbedding.length
         );
 
-
+        // ==========================================
         // ดึงโพสต์ที่มี Embedding
+        // ==========================================
+
         db.query(
             `
             SELECT
@@ -534,9 +1114,12 @@ app.post("/pet-scan", async (req, res) => {
                     });
                 }
 
-
+                
                 const results = [];
 
+                // ==========================================
+                // เปรียบเทียบกับทุกโพสต์
+                // ==========================================
 
                 for (const post of rows) {
 
@@ -554,8 +1137,17 @@ app.post("/pet-scan", async (req, res) => {
                             );
 
                         results.push({
+
                             ...post,
-                            similarity
+
+                            similarity,
+
+                            similarityPercent:
+                                similarity * 100,
+
+                            isMatch:
+                                similarity >=
+                                MATCH_THRESHOLD
                         });
 
                     } catch (error) {
@@ -568,36 +1160,130 @@ app.post("/pet-scan", async (req, res) => {
                     }
                 }
 
+                // ==========================================
+                // เรียงจาก Similarity สูง → ต่ำ
+                // ==========================================
 
-                // เรียงจากเหมือนมาก → เหมือนน้อย
+
                 results.sort(
                     (a, b) =>
                         b.similarity -
                         a.similarity
                 );
 
+                // ==========================================
+                // Match ที่ผ่าน Threshold เท่านั้น
+                // ==========================================
 
-                // เอาแค่ 10 อันดับแรก
-                const topResults =
-                    results.slice(0, 10);
+                const matchedResults =
+                    results
+                        .filter(
+                            post =>
+                                post.similarity >=
+                                MATCH_THRESHOLD
+                        )
+                        .slice(0, 10);
 
+                // ==========================================
+                // Best Result
+                // ==========================================
+
+                const bestResult =
+                    results.length > 0
+                        ? results[0]
+                        : null;
 
                 console.log(
                     "\nผลการค้นหา:"
                 );
 
-                topResults.forEach((post, index) => {
+                if (bestResult) {
 
                     console.log(
-                        `${index + 1}. Post ${post.id} - similarity: ${post.similarity}`
+                        `Best Match: Post ${bestResult.id}`
                     );
 
-                });
+                    console.log(
+                        `Similarity: ${
+                            bestResult.similarityPercent.toFixed(2)
+                        }%`
+                    );
 
+                    console.log(
+                        `Threshold: ${
+                            MATCH_THRESHOLD * 100
+                        }%`
+                    );
+
+                    console.log(
+                        `Match: ${
+                            bestResult.similarity >=
+                            MATCH_THRESHOLD
+                        }`
+                    );
+                }
+
+                if (
+                    matchedResults.length === 0
+                ) {
+
+                    console.log(
+                        "❌ ไม่พบโพสต์ที่ผ่านเกณฑ์ Match"
+                    );
+
+                } else {
+
+                    matchedResults.forEach(
+                        (post, index) => {
+
+                            console.log(
+                                `${index + 1}. ` +
+                                `Post ${post.id} - ` +
+                                `Similarity: ` +
+                                `${post.similarityPercent.toFixed(2)}%`
+                            );
+
+                        }
+                    );
+                }
+
+                // ==========================================
+                // ส่งผลกลับไปหน้าเว็บ
+                // ==========================================
 
                 res.json({
+
                     success: true,
-                    data: topResults
+
+                    threshold:
+                        MATCH_THRESHOLD,
+
+                    thresholdPercent:
+                        MATCH_THRESHOLD * 100,
+
+                    bestMatch:
+
+                        bestResult
+                            ? {
+                                postId:
+                                    bestResult.id,
+
+                                similarity:
+                                    bestResult.similarity,
+
+                                similarityPercent:
+                                    bestResult
+                                        .similarityPercent,
+
+                                isMatch:
+                                    bestResult
+                                        .similarity >=
+                                    MATCH_THRESHOLD
+                            }
+                            : null,
+
+                    data:
+                        matchedResults
                 });
 
             }
@@ -611,22 +1297,57 @@ app.post("/pet-scan", async (req, res) => {
         );
 
         res.status(500).json({
+
             success: false,
-            message: "ไม่สามารถสแกนสัตว์เลี้ยงได้"
+
+            message:
+                "ไม่สามารถสแกนสัตว์เลี้ยงได้"
         });
     }
 });
 
 // ===========================
-// DELETE POST
+// UPDATE MY POST
 // ===========================
+app.put("/posts/:id", (req, res) => {
 
-app.delete("/posts/:id", (req, res) => {
+    const {
+        user_id,
+        pet_name,
+        pet_type,
+        breed,
+        province,
+        description,
+        latitude,
+        longitude
+    } = req.body;
 
     db.query(
-        "DELETE FROM posts WHERE id=?",
-        [req.params.id],
-        (err) => {
+        `
+        UPDATE posts
+        SET
+            pet_name=?,
+            pet_type=?,
+            breed=?,
+            province=?,
+            description=?,
+            latitude=?,
+            longitude=?
+        WHERE id=?
+        AND user_id=?
+        `,
+        [
+            pet_name,
+            pet_type,
+            breed,
+            province,
+            description,
+            latitude,
+            longitude,
+            req.params.id,
+            user_id
+        ],
+        (err, result) => {
 
             if (err) {
                 return res.status(500).json({
@@ -635,8 +1356,204 @@ app.delete("/posts/:id", (req, res) => {
                 });
             }
 
+            if (result.affectedRows === 0) {
+                return res.status(403).json({
+                    success: false,
+                    message: "คุณไม่มีสิทธิ์แก้ไขโพสต์นี้"
+                });
+            }
+
             res.json({
-                success: true
+                success: true,
+                message: "แก้ไขโพสต์สำเร็จ"
+            });
+
+        }
+    );
+
+});
+
+// ===========================
+// UPDATE MY POST
+// ===========================
+app.put("/posts/:id", (req, res) => {
+
+    const {
+        user_id,
+        pet_name,
+        pet_type,
+        breed,
+        province,
+        description,
+        latitude,
+        longitude
+    } = req.body;
+
+    db.query(
+        `
+        UPDATE posts
+        SET
+            pet_name = ?,
+            pet_type = ?,
+            breed = ?,
+            province = ?,
+            description = ?,
+            latitude = ?,
+            longitude = ?
+        WHERE id = ?
+        AND user_id = ?
+        `,
+        [
+            pet_name,
+            pet_type,
+            breed,
+            province,
+            description,
+            latitude,
+            longitude,
+            req.params.id,
+            user_id
+        ],
+        (err, result) => {
+
+            if (err) {
+
+                console.error(
+                    "UPDATE POST ERROR:",
+                    err
+                );
+
+                return res.status(500).json({
+                    success: false,
+                    message: err.sqlMessage || err.message
+                });
+
+            }
+
+            if (result.affectedRows === 0) {
+
+                return res.status(403).json({
+                    success: false,
+                    message: "คุณไม่มีสิทธิ์แก้ไขโพสต์นี้ หรือไม่พบโพสต์"
+                });
+
+            }
+
+            res.json({
+                success: true,
+                message: "แก้ไขโพสต์สำเร็จ"
+            });
+
+        }
+    );
+
+});
+
+// ===========================
+// UPDATE POST STATUS
+// ===========================
+app.patch("/posts/:id/status", (req, res) => {
+
+    const {
+        user_id,
+        status
+    } = req.body;
+
+    // อนุญาตเฉพาะสถานะที่ระบบใช้
+    if (!["lost", "found"].includes(status)) {
+
+        return res.status(400).json({
+            success: false,
+            message: "สถานะไม่ถูกต้อง"
+        });
+
+    }
+
+    db.query(
+        `
+        UPDATE posts
+        SET status = ?
+        WHERE id = ?
+        AND user_id = ?
+        `,
+        [
+            status,
+            req.params.id,
+            user_id
+        ],
+        (err, result) => {
+
+            if (err) {
+
+                console.error(
+                    "UPDATE POST STATUS ERROR:",
+                    err
+                );
+
+                return res.status(500).json({
+                    success: false,
+                    message: err.sqlMessage || err.message
+                });
+
+            }
+
+            if (result.affectedRows === 0) {
+
+                return res.status(403).json({
+                    success: false,
+                    message: "คุณไม่มีสิทธิ์แก้ไขโพสต์นี้ หรือไม่พบโพสต์"
+                });
+
+            }
+
+            res.json({
+                success: true,
+                message: "เปลี่ยนสถานะโพสต์สำเร็จ"
+            });
+
+        }
+    );
+
+});
+
+// ===========================
+// DELETE MY POST
+// ===========================
+app.delete("/posts/:id", (req, res) => {
+
+    const { user_id } = req.body;
+
+    db.query(
+        `
+        DELETE FROM posts
+        WHERE id = ?
+        AND user_id = ?
+        `,
+        [
+            req.params.id,
+            user_id
+        ],
+        (err, result) => {
+
+            if (err) {
+                console.error("DELETE POST ERROR:", err);
+
+                return res.status(500).json({
+                    success: false,
+                    message: err.sqlMessage || err.message
+                });
+            }
+
+            if (result.affectedRows === 0) {
+                return res.status(403).json({
+                    success: false,
+                    message: "คุณไม่มีสิทธิ์ลบโพสต์นี้ หรือไม่พบโพสต์"
+                });
+            }
+
+            res.json({
+                success: true,
+                message: "ลบโพสต์สำเร็จ"
             });
 
         }

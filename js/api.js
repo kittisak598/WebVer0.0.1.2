@@ -36,6 +36,13 @@ const api = {
       body: body ? JSON.stringify(body) : undefined
     }),
 
+  delete: (path, body) =>
+  apiRequest(path, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined
+  }),  
+
   // สำหรับส่งฟอร์มที่มีไฟล์แนบ (multipart/form-data) เช่น สร้างโพสต์พร้อมรูป
   postForm: (path, formData) =>
     apiRequest(path, {

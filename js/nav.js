@@ -7,6 +7,16 @@ const AUTH_REQUIRED_TABS = ['profile', 'chat', 'noti', 'post'];
 
 function switchTab(tabId) {
 
+
+  // ป้องกันผู้ใช้ทั่วไปเข้า Admin
+  if (
+    tabId === 'admin' &&
+    localStorage.getItem('user_role') !== 'admin'
+  ) {
+    alert('คุณไม่มีสิทธิ์เข้าถึง Admin');
+    return;
+  }
+
   if (
     tabId !== "petscan" &&
     typeof stopFaceCamera === "function"

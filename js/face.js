@@ -62,12 +62,36 @@ async function startPetCamera() {
 
     await video.play();
 
+    await video.play();
+
     console.log(
         "เปิด Pet Camera สำเร็จ",
         video.videoWidth,
         "x",
         video.videoHeight
     );
+
+    // ========================================
+    // เริ่มตรวจจับโครงสร้างสัตว์
+    // ========================================
+
+    if (
+        typeof window.startAnimalLandmarkLoop ===
+        "function"
+    ) {
+
+        console.log(
+            "🐶🐱 เริ่ม Animal Landmark Loop"
+        );
+
+        window.startAnimalLandmarkLoop();
+
+    } else {
+
+        console.warn(
+            "⚠️ ไม่พบ startAnimalLandmarkLoop"
+        );
+    }
 
     if (status) {
         status.textContent =
@@ -81,6 +105,18 @@ async function startPetCamera() {
 // ========================================
 
 function stopPetCamera() {
+
+    // ========================================
+    // หยุด Animal Landmark
+    // ========================================
+
+    if (
+        typeof window.stopAnimalLandmarkLoop ===
+        "function"
+    ) {
+
+        window.stopAnimalLandmarkLoop();
+    }
 
     // ปิด Camera Stream
     if (petStream) {

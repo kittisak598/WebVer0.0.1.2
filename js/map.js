@@ -40,13 +40,13 @@ async function loadMapMarkers() {
     try {
 
         const result = await api.get("/posts");
-        const posts = result.data;
+        const posts = result.data || [];
 
-        console.log(posts);
+        console.log("MAP POSTS →", posts);
 
         // ลบหมุดเดิม
         mainMapMarkers.forEach(marker => {
-
+            
             window.mainMap.removeLayer(marker);
 
         });
@@ -55,82 +55,202 @@ async function loadMapMarkers() {
 
         posts.forEach(post => {
 
-  if (post.latitude == null || post.longitude == null) return;
+            if (
+                post.latitude == null ||
+                post.longitude == null
+            ) {
+                return;
+            }
 
-  const ownerName =
-    `${escapeHtml(post.first_name)} ${escapeHtml(post.last_name)}`;
+            // ========================================
+            // สถานะโพสต์
+            // ========================================
 
-  const popupHtml = `
-  <div style="width:240px;">
+            const isFound = post.status === "found";
 
-    ${
-      post.image
-        ? `
-          <img
-            src="http://localhost:3000${post.image}"
-            style="
-              width:100%;
-              height:160px;
-              object-fit:cover;
-              border-radius:10px;
-              margin-bottom:8px;
-            "
-          >
-        `
-        : `
-          <div style="
-            width:100%;
-            height:160px;
-            background:#f1f1f1;
-            border-radius:10px;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            margin-bottom:8px;
-          ">
-            ไม่มีรูป
-          </div>
-        `
+            const statusText = isFound
+                ? "พบแล้ว"
+                : "กำลังตามหา";
+
+            const statusColor = isFound
+                ? "#22c55e"
+                : "#ef4444";
+
+
+            // ========================================
+            // ชื่อเจ้าของ
+            // ========================================
+
+            const ownerName =
+                `${escapeHtml(post.first_name || "")} ${escapeHtml(post.last_name || "")}`;
+
+
+            // ========================================
+            // สร้างหมุดสีตามสถานะ
+            // ========================================
+
+            const markerIcon = L.divIcon({
+
+                className: "",
+
+                html: `
+                    <div
+                        style="
+                            width:34px;
+                            height:34px;
+                            background:${statusColor};
+                            border:3px solid white;
+                            border-radius:50% 50% 50% 0;
+                            transform:rotate(-45deg);
+                            box-shadow:0 3px 8px rgba(0,0,0,.3);
+                            display:flex;
+                            align-items:center;
+                            justify-content:center;
+                        "
+                    >
+                        <span
+                            style="
+                                transform:rotate(45deg);
+                                color:white;
+                                font-size:15px;
+                                line-height:1;
+                            "
+                        >
+                            🐾
+                        </span>
+                    </div>
+                `,
+
+                iconSize: [34, 34],
+                iconAnchor: [17, 34],
+                popupAnchor: [0, -32]
+
+            });
+
+
+            // ========================================
+            // Popup
+            // ========================================
+
+            const popupHtml = `
+
+                <div style="width:240px;">
+
+                    ${
+                        post.image
+                            ? `
+                                <img
+                                    src="http://localhost:3000${post.image}"
+                                    style="
+                                        width:100%;
+                                        height:160px;
+                                        object-fit:cover;
+                                        border-radius:10px;
+                                        margin-bottom:8px;
+                                    "
+                                >
+                            `
+                            : `
+                                <div
+                                    style="
+                                        width:100%;
+                                        height:160px;
+                                        background:#f1f1f1;
+                                        border-radius:10px;
+                                        display:flex;
+                                        align-items:center;
+                                        justify-content:center;
+                                        margin-bottom:8px;
+                                    "
+                                >
+                                    ไม่มีรูป
+                                </div>
+                            `
+                    }
+
+                    <b style="font-size:1.05rem;">
+                        ${escapeHtml(post.pet_name)}
+                    </b>
+
+                    <div
+                        style="
+                            display:inline-block;
+                            margin:6px 0;
+                            padding:4px 10px;
+                            border-radius:20px;
+                            background:${statusColor};
+                            color:white;
+                            font-size:.78rem;
+                            font-weight:600;
+                        "
+                    >
+                        ${statusText}
+                    </div>
+
+                    <br>
+
+                    <span>
+                        จังหวัด : ${escapeHtml(post.province || "-")}
+                    </span>
+
+                    <br>
+
+                    <span>
+                        รายละเอียด :
+                        ${escapeHtml(post.description || "-")}
+                    </span>
+
+                    <br>
+
+                    <span style="font-size:.8rem; color:#777;">
+                        โพสต์โดย ${ownerName}
+                    </span>
+
+                    <br><br>
+
+                    <button
+                        onclick="startConversation(
+                            ${post.id},
+                            ${post.user_id},
+                            '${ownerName.replace(/'/g, "\\'")}'
+                        )"
+                    >
+                        แชท
+                    </button>
+
+                </div>
+
+            `;
+
+
+            // ========================================
+            // สร้าง Marker
+            // ========================================
+
+            const marker = L.marker(
+                [
+                    Number(post.latitude),
+                    Number(post.longitude)
+                ],
+                {
+                    icon: markerIcon
+                }
+            )
+                .addTo(window.mainMap)
+                .bindPopup(popupHtml);
+
+
+            mainMapMarkers.push(marker);
+
+        });
+
     }
+    catch (err) {
 
-    <b>${escapeHtml(post.pet_name)}</b><br>
-
-    <span>
-      จังหวัด : ${escapeHtml(post.province)}
-    </span><br>
-
-    <span>
-      รายละเอียด : ${escapeHtml(post.description || "-")}
-    </span><br><br>
-
-    <button
-      onclick="startConversation(
-        ${post.id},
-        ${post.user_id},
-        '${ownerName.replace(/'/g,"\\'")}'
-      )"
-    >
-      แชท
-    </button>
-
-  </div>
-`;
-
-  const marker = L.marker([
-      Number(post.latitude),
-      Number(post.longitude)
-  ])
-  .addTo(window.mainMap)
-  .bindPopup(popupHtml);
-
-  mainMapMarkers.push(marker);
-
-});
-
-    }
-    catch(err){
-
-        console.error("โหลดหมุดไม่สำเร็จ",err);
+        console.error(
+            "โหลดหมุดไม่สำเร็จ",
+            err
+        );
 
     }
 
