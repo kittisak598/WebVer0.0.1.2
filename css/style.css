@@ -3781,3 +3781,285 @@ textarea:focus-visible {
         transition: none;
     }
 }
+
+/* ==========================================================
+   PROFILE DESKTOP 2-COLUMN LAYOUT
+   ซ้าย = ข้อมูลส่วนตัว
+   ขวา = โพสต์ของฉัน
+   ========================================================== */
+
+@media (min-width: 900px) {
+
+    #view-profile .main-container {
+        width: min(1200px, calc(100% - 48px));
+        max-width: 1200px;
+
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 20px;
+
+        align-items: start;
+    }
+
+    /* Header ด้านบนเต็มความกว้าง */
+    #view-profile .profile-header-card {
+        grid-column: 1 / -1;
+    }
+
+    /* Card ข้อมูลส่วนตัว = ซ้าย */
+    #view-profile .main-container > .profile-card {
+        grid-column: 1;
+    }
+
+    /* Card โพสต์ของฉัน = ขวา */
+    #view-profile .main-container > .profile-card + .profile-card {
+        grid-column: 2;
+        grid-row: 2;
+        margin-top: 0 !important;
+    }
+
+    /* ไม่ต้องบังคับ profileForm เป็น grid ใหม่ */
+    #view-profile #profileForm {
+        display: block;
+    }
+
+    /* รายการโพสต์ยังคงเป็นแนวตั้งเหมือนเดิม */
+    #view-profile #myPostsList {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+    }
+
+}
+
+
+/* ==========================================================
+   TABLET
+   ========================================================== */
+
+@media (min-width: 601px) and (max-width: 899px) {
+
+    #view-profile .main-container {
+        width: calc(100% - 28px);
+        max-width: 900px;
+    }
+
+}
+
+
+/* ==========================================================
+   MOBILE
+   ========================================================== */
+
+@media (max-width: 600px) {
+
+    #view-profile .main-container {
+        width: calc(100% - 20px);
+        max-width: none;
+        display: block;
+        margin: 16px auto 28px;
+    }
+
+    #view-profile .profile-header-card {
+        margin-bottom: 16px;
+    }
+
+    #view-profile .main-container > .profile-card + .profile-card {
+        margin-top: 16px !important;
+    }
+
+}
+
+/* ==========================================================
+   PET SCAN - DESKTOP
+   ซ้าย = Scan / ขวา = Matching Posts
+   ========================================================== */
+
+@media (min-width: 900px) {
+
+    #view-petscan .pet-scan-container {
+        width: min(1200px, calc(100% - 48px));
+        max-width: 1200px;
+        margin: 28px auto 40px;
+        padding: 0;
+    }
+
+    #view-petscan .pet-scan-card {
+        padding: 30px;
+    }
+
+    #view-petscan .pet-scan-header {
+        margin-bottom: 26px;
+    }
+
+    .pet-scan-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.08fr) minmax(360px, .92fr);
+        gap: 24px;
+        align-items: start;
+    }
+
+    /* -------------------------
+       LEFT
+       ------------------------- */
+
+    .pet-scan-left {
+        min-width: 0;
+    }
+
+    .pet-scan-left .pet-camera-wrapper {
+        max-width: none;
+        width: 100%;
+        border-radius: 20px;
+    }
+
+    .pet-scan-left .pet-scan-controls {
+        max-width: none;
+        margin-top: 12px;
+    }
+
+    .pet-scan-left .pet-scan-guide {
+        max-width: none;
+        margin-top: 16px;
+    }
+
+    /* -------------------------
+       RIGHT
+       ------------------------- */
+
+    .pet-scan-right {
+        min-width: 0;
+        min-height: 100%;
+    }
+
+    .pet-scan-right .pet-scan-result {
+        width: 100%;
+        max-width: none;
+        margin: 0;
+        min-height: 300px;
+    }
+
+    .pet-result-header h3 {
+        margin: 0 0 5px;
+        font-size: 1.15rem;
+    }
+
+    .pet-scan-empty {
+        min-height: 360px;
+        padding: 40px 28px;
+        border: 1px dashed #E2E5E9;
+        border-radius: 18px;
+        background: linear-gradient(
+            180deg,
+            #FFFCF8 0%,
+            #FAFBFC 100%
+        );
+
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .pet-scan-empty-icon {
+        width: 64px;
+        height: 64px;
+        margin-bottom: 14px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        border-radius: 18px;
+        background: var(--orange-soft);
+        color: var(--primary-orange);
+
+        font-size: 1.45rem;
+    }
+
+    .pet-scan-empty h3 {
+        margin-bottom: 6px;
+    }
+
+}
+
+
+/* ==========================================================
+   TABLET
+   ========================================================== */
+
+@media (min-width: 601px) and (max-width: 899px) {
+
+    #view-petscan .pet-scan-container {
+        width: calc(100% - 28px);
+        max-width: 900px;
+    }
+
+    .pet-scan-layout {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 18px;
+    }
+
+}
+
+
+/* ==========================================================
+   MOBILE
+   ========================================================== */
+
+@media (max-width: 600px) {
+
+    #view-petscan .pet-scan-container {
+        width: calc(100% - 20px);
+        max-width: none;
+        margin: 16px auto 28px;
+        padding: 0;
+    }
+
+    #view-petscan .pet-scan-card {
+        padding: 16px;
+        border-radius: 18px;
+    }
+
+    .pet-scan-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    .pet-scan-left,
+    .pet-scan-right {
+        width: 100%;
+    }
+
+    .pet-scan-left .pet-camera-wrapper {
+        width: 100%;
+    }
+
+    .pet-scan-controls {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .pet-scan-controls button {
+        width: 100%;
+    }
+
+    .pet-scan-guide {
+        width: 100%;
+    }
+
+    .pet-scan-right .pet-scan-result {
+        width: 100%;
+        margin: 0;
+    }
+
+    .pet-scan-empty {
+        min-height: 220px;
+        padding: 28px 20px;
+    }
+
+}

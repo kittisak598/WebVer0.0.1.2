@@ -1411,89 +1411,133 @@ aria-label="เมนูด่วน"
             </div>
 
 
-            <!-- Camera -->
-            <div class="pet-camera-wrapper">
+            <!-- Desktop: ซ้าย = Scan / ขวา = Results -->
+            <div class="pet-scan-layout">
 
-                <video
-                    id="petVideo"
-                    autoplay
-                    muted
-                    playsinline
-                ></video>
+                <!-- =========================
+                    LEFT : SCAN
+                ========================== -->
+                <div class="pet-scan-left">
 
-                <canvas
-                    id="petOverlay"
-                ></canvas>
+                    <!-- Camera -->
+                    <div class="pet-camera-wrapper">
 
-            </div>
+                        <video
+                            id="petVideo"
+                            autoplay
+                            muted
+                            playsinline
+                        ></video>
 
+                        <canvas
+                            id="petOverlay"
+                        ></canvas>
 
-            <!-- Status -->
-            <p
-                id="petScanStatus"
-                class="pet-scan-status"
-            >
-                กดปุ่มเพื่อเปิดกล้อง
-            </p>
-
-
-            <!-- Controls -->
-            <div class="pet-scan-controls">
-
-                <button
-                    type="button"
-                    class="pet-camera-switch-btn"
-                    onclick="window.startPetCamera()"
-                >
-                    <i class="fa-solid fa-camera"></i>
-                    เปิดกล้อง
-                </button>
-
-                <button
-                    type="button"
-                    class="pet-scan-start-btn"
-                    onclick="window.startPetScan && window.startPetScan()"
-                >
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    เริ่มสแกน
-                </button>
-
-            </div>
+                    </div>
 
 
-            <!-- คำแนะนำ -->
-            <div class="pet-scan-guide">
+                    <!-- Status -->
+                    <p
+                        id="petScanStatus"
+                        class="pet-scan-status"
+                    >
+                        กดปุ่มเพื่อเปิดกล้อง
+                    </p>
 
-                <div class="pet-scan-guide-title">
-                    <i class="fa-solid fa-circle-info"></i>
-                    วิธีใช้งาน
+
+                    <!-- Controls -->
+                    <div class="pet-scan-controls">
+
+                        <button
+                            type="button"
+                            class="pet-camera-switch-btn"
+                            onclick="window.startPetCamera()"
+                        >
+                            <i class="fa-solid fa-camera"></i>
+                            เปิดกล้อง
+                        </button>
+
+                        <button
+                            type="button"
+                            class="pet-scan-start-btn"
+                            onclick="window.startPetScan && window.startPetScan()"
+                        >
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            เริ่มสแกน
+                        </button>
+
+                    </div>
+
+
+                    <!-- Guide -->
+                    <div class="pet-scan-guide">
+
+                        <div class="pet-scan-guide-title">
+                            <i class="fa-solid fa-circle-info"></i>
+                            วิธีใช้งาน
+                        </div>
+
+                        <ul>
+                            <li>พยายามให้เห็นใบหน้าชัดเจน</li>
+                            <li>หลีกเลี่ยงบริเวณที่มืดหรือแสงย้อน</li>
+                            <li>เมื่อพร้อม กดปุ่ม “เริ่มสแกน”</li>
+                        </ul>
+
+                    </div>
+
                 </div>
 
-                <ul>
-                    <li>พยายามให้เห็นใบหน้าชัดเจน</li>
-                    <li>หลีกเลี่ยงบริเวณที่มืดหรือแสงย้อน</li>
-                    <li>เมื่อพร้อม กดปุ่ม “เริ่มสแกน”</li>
-                </ul>
 
-            </div>
+                <!-- =========================
+                    RIGHT : MATCH RESULTS
+                ========================== -->
+                <div class="pet-scan-right">
 
+                    <div
+                        id="petScanResult"
+                        class="pet-scan-result"
+                        style="display:none;"
+                    >
 
-            <!-- ผลลัพธ์ -->
-            <div
-                id="petScanResult"
-                class="pet-scan-result"
-                style="display: none;"
-            >
+                        <div class="pet-result-header">
 
-                <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">
-                    <i class="fa-solid fa-paw text-orange"></i>
-                    ผลการค้นหา
-                </h3>
+                            <div>
+                                <h3>
+                                    <i class="fa-solid fa-paw text-orange"></i>
+                                    ผลการค้นหา
+                                </h3>
 
-                <p class="text-muted-sm">
-                    ระบบจะแสดงโพสต์ที่มีลักษณะใกล้เคียง
-                    กับสัตว์ที่สแกน
-                </p>
+                                <p class="text-muted-sm">
+                                    โพสต์ที่มีลักษณะใกล้เคียงกับสัตว์ที่สแกน
+                                </p>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <!-- Placeholder ตอนยังไม่มีผล -->
+                    <div
+                        id="petScanEmpty"
+                        class="pet-scan-empty"
+                    >
+
+                        <div class="pet-scan-empty-icon">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </div>
+
+                        <h3>
+                            ผลการค้นหาจะแสดงที่นี่
+                        </h3>
+
+                        <p class="text-muted-sm">
+                            เปิดกล้องและกด “เริ่มสแกน”
+                            เพื่อค้นหาโพสต์ที่มีลักษณะใกล้เคียง
+                        </p>
+
+                    </div>
+
+                </div>
 
             </div>
 
