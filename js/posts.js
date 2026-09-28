@@ -34,32 +34,65 @@ async function fetchAndRenderPosts() {
 
 function renderPostCards(posts) {
 
-    const container = document.getElementById("postCardContainer");
+    const container =
+        document.getElementById("postCardContainer");
 
-    if (!Array.isArray(posts) || posts.length === 0) {
+    if (
+        !Array.isArray(posts) ||
+        posts.length === 0
+    ) {
 
-        container.innerHTML = "<p>ยังไม่มีโพสต์</p>";
+        container.innerHTML =
+            "<p>ยังไม่มีโพสต์</p>";
 
         return;
-
+        
     }
 
     container.innerHTML = posts.map(post => `
 
-        <div class="card-minimal">
+        <div
+            class="card-minimal post-item-card"
+            data-post-id="${Number(post.id)}"
+        >
 
-            ${post.image
-                ? `<img src="http://localhost:3000${post.image}" style="width:100%;border-radius:10px;">`
-                : ""
+            ${
+                post.image
+                    ? `
+                        <img
+                            src="http://localhost:3000${post.image}"
+                            style="
+                                width:100%;
+                                border-radius:10px;
+                            "
+                        >
+                    `
+                    : ""
             }
 
-            <h3>${post.pet_name}</h3>
+            <h3>
+                ${post.pet_name || "ไม่ระบุชื่อ"}
+            </h3>
 
-            <p>${post.description ?? ""}</p>
+            <p>
+                ${post.description || ""}
+            </p>
 
-            <p><b>จังหวัด :</b> ${post.province}</p>
+            <p>
+                <b>จังหวัด :</b>
+                ${post.province || "-"}
+            </p>
 
-            <button onclick="startConversation(${post.id},${post.user_id},'เจ้าของโพสต์')">
+            <button
+                type="button"
+                onclick="
+                    startConversation(
+                        ${Number(post.id)},
+                        ${Number(post.user_id)},
+                        'เจ้าของโพสต์'
+                    )
+                "
+            >
                 แชท
             </button>
 

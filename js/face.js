@@ -441,6 +441,133 @@ console.log(
     results.length
 );
 
+// =====================================================
+// เปิดโพสต์ที่ AI Match เจอ
+// =====================================================
+
+window.openPetMatchPost = function(postId) {
+
+    const id = Number(postId);
+
+    if (!id) {
+        alert("ไม่พบรหัสโพสต์");
+        return;
+    }
+
+    // ไปหน้ารายการโพสต์ก่อน
+    switchTab("postlist");
+
+    // รอให้รายการโพสต์โหลดเสร็จ
+    const findPostCard = (attempt = 0) => {
+
+        const card = document.querySelector(
+            `.post-item-card[data-post-id="${id}"]`
+        );
+
+        if (card) {
+
+            card.scrollIntoView({
+                behavior: "smooth",
+                block: "center"
+            });
+
+            // ไฮไลต์โพสต์ที่ Match
+            card.style.transition =
+                "box-shadow .25s ease, transform .25s ease";
+
+            card.style.boxShadow =
+                "0 0 0 3px rgba(255,159,28,.45)";
+
+            card.style.transform =
+                "translateY(-3px)";
+
+            setTimeout(() => {
+
+                card.style.boxShadow = "";
+                card.style.transform = "";
+
+            }, 1800);
+
+            return;
+        }
+
+        // ถ้ายังโหลดไม่เสร็จ ให้ลองใหม่
+        if (attempt < 20) {
+
+            setTimeout(() => {
+
+                findPostCard(attempt + 1);
+
+            }, 200);
+
+        } else {
+
+            alert("ไม่พบโพสต์นี้ในรายการโพสต์");
+
+        }
+
+    };
+
+    setTimeout(() => {
+
+        findPostCard();
+
+    }, 300);
+
+};
+
+
+// =====================================================
+// เริ่มแชทกับเจ้าของโพสต์จาก AI Match
+// =====================================================
+
+window.startPetMatchChat = function(button) {
+
+    const postId =
+        Number(button.dataset.postId);
+
+    const userId =
+        Number(button.dataset.userId);
+
+    const ownerName =
+        button.dataset.ownerName
+            ? decodeURIComponent(
+                button.dataset.ownerName
+            )
+            : "เจ้าของโพสต์";
+
+
+    if (!postId || !userId) {
+
+        alert(
+            "ข้อมูลโพสต์หรือเจ้าของโพสต์ไม่ครบ"
+        );
+
+        return;
+    }
+
+
+    // ตรวจว่าฟังก์ชันแชทโหลดแล้วหรือยัง
+    if (
+        typeof startConversation !==
+        "function"
+    ) {
+
+        alert(
+            "ระบบแชทยังโหลดไม่สำเร็จ กรุณารีเฟรชหน้าเว็บ"
+        );
+
+        return;
+    }
+
+
+    startConversation(
+        postId,
+        userId,
+        ownerName
+    );
+
+};
 
 // ========================================
 // แสดงผลบนเว็บ
@@ -448,8 +575,8 @@ console.log(
 
 if (resultBox) {
 
-    resultBox.style.display = "block";
-
+    resultBox.style.display = "block"
+    
 
     if (results.length === 0) {
 
@@ -486,57 +613,126 @@ if (resultBox) {
                     ผลการค้นหา
                 </h3>
 
-                ${results.map((post, index) => `
+                ${results.map((post, index) => {
 
-                    <div
-                        style="
-                            display:flex;
-                            gap:12px;
-                            padding:12px;
-                            margin-bottom:10px;
-                            border:1px solid var(--border-light);
-                            border-radius:12px;
-                            background:#fff;
-                        "
-                    >
+                    const ownerName =
+                        `${post.first_name || ""} ${post.last_name || ""}`.trim()
+                        || "ไม่ระบุชื่อ";
 
-                        <img
-                            src="${post.image}"
+                    return `
+
+                        <div
                             style="
-                                width:80px;
-                                height:80px;
-                                object-fit:cover;
-                                border-radius:10px;
+                                padding:14px;
+                                margin-bottom:12px;
+                                border:1px solid var(--border-light);
+                                border-radius:14px;
+                                background:#fff;
                             "
                         >
 
-                        <div style="flex:1;">
+                            <div
+                                style="
+                                    display:flex;
+                                    gap:12px;
+                                "
+                            >
 
-                            <strong>
-                                ${index + 1}.
-                                ${post.pet_name || "ไม่ระบุชื่อ"}
-                            </strong>
+                                <img
+                                    src="${post.image || ""}"
+                                    style="
+                                        width:80px;
+                                        height:80px;
+                                        object-fit:cover;
+                                        border-radius:10px;
+                                        flex-shrink:0;
+                                    "
+                                    onerror="
+                                        this.style.display='none';
+                                    "
+                                >
 
-                            <div class="text-muted-sm">
-                                ประเภท:
-                                ${post.pet_type || "-"}
+                                <div style="flex:1;">
+
+                                    <strong
+                                        style="
+                                            display:block;
+                                            margin-bottom:5px;
+                                            font-size:1rem;
+                                        "
+                                    >
+                                        ${index + 1}.
+                                        ${post.pet_name || "ไม่ระบุชื่อ"}
+                                    </strong>
+
+                                    <div class="text-muted-sm">
+                                        ประเภท:
+                                        ${post.pet_type || "-"}
+                                    </div>
+
+                                    <div class="text-muted-sm">
+                                        จังหวัด:
+                                        ${post.province || "-"}
+                                    </div>
+
+                                    <div
+                                        style="
+                                            margin-top:6px;
+                                            font-weight:600;
+                                            color:var(--primary-orange);
+                                        "
+                                    >
+                                        ${Number(post.similarityPercent ?? post.similarity * 100).toFixed(1)}% Match
+                                    </div>
+
+                                    <div class="text-muted-sm">
+                                        เจ้าของ:
+                                        ${ownerName}
+                                    </div>
+
+                                </div>
+
                             </div>
 
-                            <div class="text-muted-sm">
-                                จังหวัด:
-                                ${post.province || "-"}
-                            </div>
+                            <div
+                                style="
+                                    display:flex;
+                                    gap:8px;
+                                    margin-top:12px;
+                                    flex-wrap:wrap;
+                                "
+                            >
 
-                            <div class="text-muted-sm">
-                                Similarity:
-                                ${Number(post.similarity).toFixed(4)}
+                                <button
+                                    type="button"
+                                    class="btn-secondary-sm"
+                                    style="flex:1;"
+                                    onclick="openPetMatchPost(${Number(post.id)})"
+                                >
+                                    <i class="fa-solid fa-eye"></i>
+                                    ดูโพสต์
+                                </button>
+
+                                <button
+                                    type="button"
+                                    class="btn-primary"
+                                    style="flex:1;"
+                                    data-post-id="${Number(post.id)}"
+                                    data-user-id="${Number(post.user_id)}"
+                                    data-owner-name="${encodeURIComponent(ownerName)}"
+                                    onclick="startPetMatchChat(this)"
+                                >
+                                    <i class="fa-solid fa-message"></i>
+                                    แชทกับเจ้าของ
+                                </button>
+
                             </div>
 
                         </div>
 
-                    </div>
+                    `;
 
-                `).join("")}
+                }).join("")}
 
             </div>
         `;

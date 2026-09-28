@@ -30,6 +30,11 @@
         รายการโพสต์
     </a>
 
+    <a id="nav-petscan" onclick="switchTab('petscan')">
+        <i class="fa-solid fa-paw"></i>
+        สแกนสัตว์
+    </a>
+
     <a id="nav-post" onclick="switchTab('post')">
         โพสต์ตามหา
     </a>
@@ -38,8 +43,11 @@
         ข้อความ
     </a>
 
-    <a id="nav-noti" onclick="switchTab('noti')">
-        แจ้งเตือน
+    <a
+        id="nav-noti"
+        onclick="switchTab('noti'); loadNotifications();"
+    >
+        🔔 แจ้งเตือน
     </a>
 
     <a
@@ -98,7 +106,9 @@ aria-label="เมนูด่วน"
     สแกนหาสัตว์เลี้ยง
 </button>
 
-<button onclick="switchTab('noti'); closeFabMenu();">
+<button
+    onclick="switchTab('noti'); loadNotifications(); closeFabMenu();"
+>
     <i class="fa-solid fa-bell"></i>
     การแจ้งเตือน
 </button>

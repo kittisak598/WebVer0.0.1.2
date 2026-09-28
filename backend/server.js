@@ -984,10 +984,41 @@ app.post("/posts", async (req, res) => {
                     });
                 }
 
-                res.json({
-                    success: true,
-                    id: result.insertId
-                });
+                // ==========================================
+                // สร้าง Notification เมื่อสร้างโพสต์สำเร็จ
+                // ==========================================
+                db.query(
+                    `
+                    INSERT INTO notifications
+                    (
+                        user_id,
+                        message
+                    )
+                    VALUES (?, ?)
+                    `,
+                    [
+                        user_id,
+                        `สร้างโพสต์ตามหา "${pet_name}" สำเร็จแล้ว`
+                    ],
+                    (notiErr) => {
+
+                        if (notiErr) {
+
+                            console.error(
+                                "CREATE POST NOTIFICATION ERROR:",
+                                notiErr
+                            );
+
+                        }
+
+                        // สร้างโพสต์สำเร็จ แม้ notification จะมีปัญหา
+                        return res.json({
+                            success: true,
+                            id: result.insertId
+                        });
+
+                    }
+                );
 
             }
         );
@@ -1469,24 +1500,26 @@ app.patch("/posts/:id/status", (req, res) => {
 
     }
 
+    // ==========================================
+    // ตรวจว่าเป็นเจ้าของโพสต์จริง + ดูสถานะเดิม
+    // ==========================================
     db.query(
         `
-        UPDATE posts
-        SET status = ?
+        SELECT id, user_id, pet_name, status
+        FROM posts
         WHERE id = ?
         AND user_id = ?
         `,
         [
-            status,
             req.params.id,
             user_id
         ],
-        (err, result) => {
+        (err, rows) => {
 
             if (err) {
 
                 console.error(
-                    "UPDATE POST STATUS ERROR:",
+                    "CHECK POST STATUS ERROR:",
                     err
                 );
 
@@ -1497,7 +1530,7 @@ app.patch("/posts/:id/status", (req, res) => {
 
             }
 
-            if (result.affectedRows === 0) {
+            if (rows.length === 0) {
 
                 return res.status(403).json({
                     success: false,
@@ -1506,10 +1539,102 @@ app.patch("/posts/:id/status", (req, res) => {
 
             }
 
-            res.json({
-                success: true,
-                message: "เปลี่ยนสถานะโพสต์สำเร็จ"
-            });
+            const post = rows[0];
+            const oldStatus = post.status;
+
+            // ==========================================
+            // อัปเดตสถานะ
+            // ==========================================
+            db.query(
+                `
+                UPDATE posts
+                SET status = ?
+                WHERE id = ?
+                AND user_id = ?
+                `,
+                [
+                    status,
+                    req.params.id,
+                    user_id
+                ],
+                (updateErr, result) => {
+
+                    if (updateErr) {
+
+                        console.error(
+                            "UPDATE POST STATUS ERROR:",
+                            updateErr
+                        );
+
+                        return res.status(500).json({
+                            success: false,
+                            message:
+                                updateErr.sqlMessage ||
+                                updateErr.message
+                        });
+
+                    }
+
+                    if (result.affectedRows === 0) {
+
+                        return res.status(403).json({
+                            success: false,
+                            message: "ไม่สามารถเปลี่ยนสถานะโพสต์ได้"
+                        });
+
+                    }
+
+                    // ==========================================
+                    // สร้าง Notification เฉพาะตอน
+                    // lost -> found
+                    // ==========================================
+                    if (oldStatus !== status) {
+
+                        const statusText =
+                            status === "found"
+                                ? "พบแล้ว"
+                                : "กำลังตามหา";
+
+                        db.query(
+                            `
+                            INSERT INTO notifications
+                            (
+                                user_id,
+                                message
+                            )
+                            VALUES (?, ?)
+                            `,
+                            [
+                                user_id,
+                                `สถานะสัตว์เลี้ยง "${post.pet_name}" เปลี่ยนสถานะเป็น "${statusText}" แล้ว`
+                            ],
+                            (notiErr) => {
+
+                                if (notiErr) {
+                                    console.error(
+                                        "CREATE STATUS NOTIFICATION ERROR:",
+                                        notiErr
+                                    );
+                                }
+
+                                return res.json({
+                                    success: true,
+                                    message: "เปลี่ยนสถานะโพสต์สำเร็จ"
+                                });
+                            }
+                        );
+
+                    } else {
+
+                        return res.json({
+                            success: true,
+                            message: "เปลี่ยนสถานะโพสต์สำเร็จ"
+                        });
+
+                    }
+
+                }
+            );
 
         }
     );
@@ -1752,40 +1877,236 @@ app.get("/messages/:user1/:user2", (req, res) => {
 app.post("/messages", (req, res) => {
 
     const {
+        conversation_id,
         sender_id,
         receiver_id,
         message
     } = req.body;
 
-    db.query(
+    if (!sender_id || !message) {
 
-        `INSERT INTO messages
-        (sender_id,receiver_id,message)
-        VALUES(?,?,?)`,
+        return res.status(400).json({
+            success: false,
+            message: "ข้อมูลข้อความไม่ครบ"
+        });
 
-        [
-            sender_id,
-            receiver_id,
-            message
-        ],
+    }
 
-        (err, result) => {
+    // ==========================================
+    // หา receiver จาก conversation ถ้าไม่ได้ส่งมา
+    // ==========================================
 
-            if (err) {
-                return res.status(500).json({
-                    success: false,
-                    message: err.sqlMessage
-                });
-            }
+    const insertMessage = (finalReceiverId) => {
 
-            res.json({
-                success: true,
-                id: result.insertId
+        if (!finalReceiverId) {
+
+            return res.status(400).json({
+                success: false,
+                message: "ไม่พบผู้รับข้อความ"
             });
 
         }
 
-    );
+        db.query(
+
+            `INSERT INTO messages
+            (
+                conversation_id,
+                sender_id,
+                receiver_id,
+                message
+            )
+            VALUES(?,?,?,?)`,
+
+            [
+                conversation_id || null,
+                sender_id,
+                finalReceiverId,
+                message
+            ],
+
+            (err, result) => {
+
+                if (err) {
+
+                    console.error(
+                        "SEND MESSAGE ERROR:",
+                        err
+                    );
+
+                    return res.status(500).json({
+                        success: false,
+                        message:
+                            err.sqlMessage ||
+                            err.message
+                    });
+
+                }
+
+                // ==========================================
+                // สร้าง Notification ให้ผู้รับ
+                // ==========================================
+
+                db.query(
+
+                    `SELECT first_name, last_name
+                    FROM users
+                    WHERE id=?`,
+
+                    [sender_id],
+
+                    (userErr, users) => {
+
+                        if (userErr) {
+
+                            console.error(
+                                "GET SENDER ERROR:",
+                                userErr
+                            );
+
+                            return res.json({
+                                success: true,
+                                id: result.insertId
+                            });
+
+                        }
+
+                        const senderName =
+                            users.length > 0
+                                ? `${users[0].first_name} ${users[0].last_name}`.trim()
+                                : "ผู้ใช้งาน";
+
+                        const notificationMessage =
+                            `${senderName} ส่งข้อความใหม่ถึงคุณ`;
+
+                        db.query(
+
+                            `INSERT INTO notifications
+                            (
+                                user_id,
+                                message
+                            )
+                            VALUES(?,?)`,
+
+                            [
+                                finalReceiverId,
+                                notificationMessage
+                            ],
+
+                            (notiErr) => {
+
+                                if (notiErr) {
+
+                                    console.error(
+                                        "CREATE NOTIFICATION ERROR:",
+                                        notiErr
+                                    );
+
+                                }
+
+                                // ต่อให้ notification มีปัญหา
+                                // ข้อความก็ยังถือว่าส่งสำเร็จ
+
+                                res.json({
+                                    success: true,
+                                    id: result.insertId
+                                });
+
+                            }
+
+                        );
+
+                    }
+
+                );
+
+            }
+
+        );
+
+    };
+
+    // ==========================================
+    // ถ้ามี receiver_id อยู่แล้ว
+    // ==========================================
+
+    if (receiver_id) {
+
+        return insertMessage(
+            Number(receiver_id)
+        );
+
+    }
+
+    // ==========================================
+    // ถ้าไม่มี receiver_id ให้หา
+    // จาก conversation_id
+    // ==========================================
+
+    if (conversation_id) {
+
+        db.query(
+
+            `SELECT
+                user_one_id,
+                user_two_id
+            FROM conversations
+            WHERE id=?`,
+
+            [conversation_id],
+
+            (err, rows) => {
+
+                if (err) {
+
+                    return res.status(500).json({
+                        success: false,
+                        message: err.sqlMessage
+                    });
+
+                }
+
+                if (rows.length === 0) {
+
+                    return res.status(404).json({
+                        success: false,
+                        message: "ไม่พบ Conversation"
+                    });
+
+                }
+
+                const conversation =
+                    rows[0];
+
+                const myId =
+                    Number(sender_id);
+
+                const finalReceiverId =
+                    Number(
+                        conversation.user_one_id
+                    ) === myId
+                        ? Number(
+                            conversation.user_two_id
+                        )
+                        : Number(
+                            conversation.user_one_id
+                        );
+
+                insertMessage(
+                    finalReceiverId
+                );
+
+            }
+
+        );
+
+        return;
+    }
+
+    return res.status(400).json({
+        success: false,
+        message: "ไม่พบผู้รับหรือ Conversation"
+    });
 
 });
 
